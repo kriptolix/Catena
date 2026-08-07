@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="detalhes-equipamento">
+    <h2>Detalhes do Equipamento</h2>
+    <div id="loading">Carregando...</div>
+    <div id="conteudo" style="display:none;">
+        <section>
+            <h3>Identificação</h3>
+            <p><strong>Tombo:</strong> <span id="tombo"></span></p>
+            <p><strong>Serial:</strong> <span id="numero-serie"></span></p>
+            <p><strong>UUID:</strong> <span id="uuid"></span></p>
+            <p><strong>Fabricante:</strong> <span id="fabricante"></span></p>
+            <p><strong>Modelo:</strong> <span id="modelo"></span></p>
+        </section>
+        <section>
+            <h3>Hardware Atual</h3>
+            <p><strong>Processador:</strong> <span id="cpu"></span></p>
+            <p><strong>Memória:</strong> <span id="memoria"></span></p>
+            <p><strong>Discos:</strong> <span id="armazenamento"></span></p>
+            <p><strong>GPU:</strong> <span id="gpu"></span></p>
+        </section>
+        <section>
+            <h3>Patrimônio</h3>
+            <p><strong>Localização:</strong> <span id="localizacao"></span></p>
+            <p><strong>Estado:</strong> <span id="estado"></span></p>
+            <p><strong>Garantia:</strong> <span id="garantia"></span></p>
+        </section>
+        <section>
+            <h3>Histórico</h3>
+            <ul id="historico-lista"></ul>
+        </section>
+        <section>
+            <h3>Anotações</h3>
+            <ul id="anotacoes-lista"></ul>
+        </section>
+    </div>
+</div>
+
+<script>
+    const tombo = window.location.pathname.split('/').pop();
+    fetch(`/api/v1/equipamentos/${tombo}`)
+        .then(response => response.json())
+        .then(equip => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('conteudo').style.display = 'block';
+
+            document.getElementById('tombo').textContent = equip.tombo;
+            document.getElementById('numero-serie').textContent = equip.numero_serie || '';
+            document.getElementById('uuid').textContent = equip.uuid || '';
+            document.getElementById('fabricante').textContent = equip.fabricante?.valor || '';
+            document.getElementById('modelo').textContent = equip.modelo?.valor || '';
+            document.getElementById('localizacao').textContent = equip.localizacao;
+            document.getElementById('estado').textContent = equip.estado;
+            // Garantia
+            let garantia = 'NÃO';
+            if (equip.inicio_garantia && equip.duracao_garantia) {
+                const fim = new Date(equip.inicio_garantia);
+                fim.setMonth(fim.getMonth() + equip.duracao_garantia);
+                if (fim > new Date()) {
+                    garantia = `SIM (até ${fim.toLocaleDateString()})`;
+                }
+            }
+            document.getElementById('garantia').textContent = garantia;
+
+            // Buscar inventário mais recente
+            fetch(`/api/v1/equipamentos/${tombo}/inventarios`)
+                .then(res => res.json())
+                .then(inventarios => {
+                    if (inventarios.length > 0) {
+                        const inv = inventarios[0];
+                        document.getElementById('cpu').textContent = inv.cpu || '';
+                        document.getElementById('memoria').textContent = inv.memoria || '';
+                        document.getElementById('armazenamento').textContent = inv.armazenamento || '';
+                        document.getElementById('gpu').textContent = inv.gpu || '';
+                    }
+                });
+
+            // Histórico
+            fetch(`/api/v1/equipamentos/${tombo}/historico`)
+                .then(res => res.json())
+                .then(historico => {
+                    const ul = document.getElementById('historico-lista');
+                    historico.forEach(item => {
+                        const li = document.createElement('li');
+                        li.textContent = `${new Date(item.data).toLocaleString()} - ${item.usuario}: ${item.tipo} (${item.valor_anterior || ''} -> ${item.valor_novo || ''})`;
+                        ul.appendChild(li);
+                    });
+                });
+
+            // Anotações (não temos endpoint específico para listar anotações, vamos pegar da rota de equipamentos? 
+            // Melhor: adicionar uma rota para anotações. Por enquanto, podemos pular.
+        });
+</script>
+{% endblock %}

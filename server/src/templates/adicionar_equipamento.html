@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Adicionar Equipamento</h2>
+<form id="add-equipamento-form">
+    <div>
+        <label>Tombo (opcional):</label>
+        <input type="text" id="tombo" placeholder="Deixe em branco para gerar automático">
+    </div>
+    <div>
+        <label>UUID:</label>
+        <input type="text" id="uuid">
+    </div>
+    <div>
+        <label>Fabricante:</label>
+        <input type="text" id="fabricante">
+    </div>
+    <div>
+        <label>Modelo:</label>
+        <input type="text" id="modelo">
+    </div>
+    <div>
+        <label>Número de Série:</label>
+        <input type="text" id="numero_serie">
+    </div>
+    <div>
+        <label>Localização (obrigatório):</label>
+        <input type="text" id="localizacao" required>
+    </div>
+    <div>
+        <label>Estado:</label>
+        <select id="estado">
+            <option value="funcional">Funcional</option>
+            <option value="defeituoso">Defeituoso</option>
+            <option value="devolvido">Devolvido</option>
+        </select>
+    </div>
+    <div>
+        <label>Início da Garantia:</label>
+        <input type="date" id="inicio_garantia">
+    </div>
+    <div>
+        <label>Duração (meses):</label>
+        <input type="number" id="duracao_garantia" min="0">
+    </div>
+    <button type="submit">Cadastrar</button>
+</form>
+<div id="add-message"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('add-equipamento-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            document.getElementById('add-message').innerHTML = '<span style="color:red;">Você precisa estar logado.</span>';
+            return;
+        }
+
+        const dados = {
+            tombo: document.getElementById('tombo').value || undefined,
+            uuid: document.getElementById('uuid').value || undefined,
+            fabricante: document.getElementById('fabricante').value || undefined,
+            modelo: document.getElementById('modelo').value || undefined,
+            numero_serie: document.getElementById('numero_serie').value || undefined,
+            localizacao: document.getElementById('localizacao').value,
+            estado: document.getElementById('estado').value,
+            inicio_garantia: document.getElementById('inicio_garantia').value || undefined,
+            duracao_garantia: document.getElementById('duracao_garantia').value ? parseInt(document.getElementById('duracao_garantia').value) : undefined
+        };
+
+        try {
+            const response = await fetch('/api/v1/equipamentos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(dados)
+            });
+            if (response.ok) {
+                const equip = await response.json();
+                document.getElementById('add-message').innerHTML = `<span style="color:green;">Equipamento ${equip.tombo} cadastrado com sucesso! <a href="/equipamentos/${equip.tombo}">Ver detalhes</a></span>`;
+                // Limpar formulário opcional
+            } else {
+                const err = await response.json();
+                document.getElementById('add-message').innerHTML = `<span style="color:red;">Erro: ${err.detail || 'Falha ao cadastrar'}</span>`;
+            }
+        } catch (error) {
+            document.getElementById('add-message').innerHTML = `<span style="color:red;">Erro de conexão</span>`;
+        }
+    });
+</script>
+{% endblock %}

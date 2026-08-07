@@ -1,0 +1,148 @@
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+import sqlite3
+from database import get_db
+from schemas import TokenData
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY", "secret")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_password(plain_password, hashed_password):    
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):   
+    return pwd_context.hash(password)
+
+def authenticate_user(db: sqlite3.Connection, username: str, password: str):
+    # Buscar usuário por username
+    cursor = db.execute(
+        "SELECT * FROM usuario WHERE username = ? LIMIT 1",
+        (username,)
+    )
+    row = cursor.fetchone()
+    
+    if not row:
+        return False
+    
+    # Converter row para dicionário
+    user = dict(row)
+    
+    # Verificar senha e status ativo
+    if not verify_password(password, user['hashed_password']) or not user['ativo']:
+        return False
+    
+    return user
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    
+    # Usar datetime.now(timezone.utc) em vez de datetime.utcnow() (deprecado)
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(token: str = Depends(oauth2_scheme), db: sqlite3.Connection = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    
+    # Buscar usuário no banco de dados
+    cursor = db.execute(
+        "SELECT * FROM usuario WHERE username = ? LIMIT 1",
+        (token_data.username,)
+    )
+    row = cursor.fetchone()
+    
+    if not row:
+        raise credentials_exception
+    
+    user = dict(row)
+    
+    if not user['ativo']:
+        raise credentials_exception
+    
+    # Retornar como dicionário ou criar um objeto Usuario
+    # Opção 1: Retornar como dicionário
+    return user
+    
+    # Opção 2: Retornar como objeto Usuario (se preferir)
+    # return Usuario(**user)
+
+async def get_current_active_user(current_user: dict = Depends(get_current_user)):
+    if not current_user.get('ativo', False):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+async def get_current_admin_user(current_user: dict = Depends(get_current_active_user)):
+    if not current_user.get('is_admin', False):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return current_user
+
+# Função auxiliar para criar usuário admin inicial (opcional)
+def create_initial_admin(db: sqlite3.Connection):
+    """Cria um usuário admin inicial se não existir nenhum"""
+    cursor = db.execute("SELECT COUNT(*) as count FROM usuario")
+    count = cursor.fetchone()['count']
+    
+    if count == 0:
+        # Criar usuário admin padrão
+        admin_password = get_password_hash("admin")  # Trocar por senha segura
+        db.execute(
+            """
+            INSERT INTO usuario (username, hashed_password, is_admin, ativo)
+            VALUES (?, ?, ?, ?)
+            """,
+            ("admin", admin_password, 1, 1)
+        )
+        db.commit()
+        print("Usuário admin padrão criado: admin / admin")
+        print("ALTERE A SENHA DO ADMIN IMEDIATAMENTE!")
+
+# Função para verificar se um usuário existe
+def get_user_by_username(db: sqlite3.Connection, username: str):
+    cursor = db.execute(
+        "SELECT * FROM usuario WHERE username = ? LIMIT 1",
+        (username,)
+    )
+    row = cursor.fetchone()
+    return dict(row) if row else None
+
+# Função para atualizar último login (opcional)
+def update_last_login(db: sqlite3.Connection, username: str):
+    db.execute(
+        """
+        UPDATE usuario 
+        SET ultimo_login = ? 
+        WHERE username = ?
+        """,
+        (datetime.now(timezone.utc), username)
+    )
+    db.commit()

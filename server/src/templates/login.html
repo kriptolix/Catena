@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Login</h2>
+<form id="login-form">
+    <div>
+        <label>Usuário:</label>
+        <input type="text" id="username" required>
+    </div>
+    <div>
+        <label>Senha:</label>
+        <input type="password" id="password" required>
+    </div>
+    <button type="submit">Entrar</button>
+</form>
+<div id="login-message"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        try {
+            const response = await fetch('/api/v1/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access_token);
+                document.getElementById('login-message').innerHTML = '<span style="color:green;">Login bem-sucedido! Redirecionando...</span>';
+                setTimeout(() => window.location.href = '/', 1000);
+            } else {
+                const err = await response.json();
+                document.getElementById('login-message').innerHTML = `<span style="color:red;">Erro: ${err.detail || 'Falha no login'}</span>`;
+            }
+        } catch (error) {
+            document.getElementById('login-message').innerHTML = `<span style="color:red;">Erro de conexão</span>`;
+        }
+    });
+</script>
+{% endblock %}

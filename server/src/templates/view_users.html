@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="list-container">
+    <div class="list-header">
+        <h2>Lista de Usuários</h2>
+        <a href="/adicionar" class="btn-primary">+ Adicionar Usuário</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>Nome Completo</th>
+                    <th>Login</th>
+                    <th>Tipo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="users-body">
+                <!-- Os dados serão preenchidos via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginação -->
+    <div class="pagination-container">
+        <div class="pagination-info" id="pagination-info">
+            Mostrando 0 de 0 usuários
+        </div>
+        <div class="pagination-controls">
+            <button id="prev-page" class="btn-pagination" disabled>Anterior</button>
+            <span id="page-info">Página 1</span>
+            <button id="next-page" class="btn-pagination">Próxima</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let totalUsers = 0;
+    let allUsers = [];
+
+    // Função para buscar usuários da API
+    async function fetchUsers(page = 1) {
+        try {
+            const response = await fetch(`/usuarios?page=${page}&limit=${itemsPerPage}`);
+            if (!response.ok) {
+                throw new Error('Erro ao carregar usuários');
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao carregar lista de usuários');
+            return { users: [], total: 0 };
+        }
+    }
+
+    // Função para renderizar a tabela de usuários
+    function renderUsers(users) {
+        const tbody = document.getElementById('users-body');
+        tbody.innerHTML = '';
+
+        if (users.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="empty-message">Nenhum usuário cadastrado</td>
+                </tr>
+            `;
+            return;
+        }
+
+        users.forEach(user => {
+            const tr = document.createElement('tr');
+            
+            // Determinar o tipo de usuário
+            const tipo = user.is_admin ? 'Administrador' : 'Usuário';
+            const tipoClass = user.is_admin ? 'tipo-admin' : 'tipo-usuario';
+            
+            tr.innerHTML = `
+                <td>${escapeHtml(user.nome_completo)}</td>
+                <td>${escapeHtml(user.login)}</td>
+                <td><span class="tipo-badge ${tipoClass}">${tipo}</span></td>
+                <td class="actions-cell">
+                    <button class="btn-edit" data-id="${user.id}" title="Editar">✏️ Editar</button>
+                    <button class="btn-delete" data-id="${user.id}" title="Excluir">🗑️ Excluir</button>
+                </td>
+            `;
+            
+            tbody.appendChild(tr);
+        });
+
+        // Adicionar event listeners para botões
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.dataset.id;
+                window.location.href = `/editar/${userId}`;
+            });
+        });
+
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.dataset.id;
+                deleteUser(userId);
+            });
+        });
+    }
+
+    // Função para deletar usuário
+    async function deleteUser(userId) {
+        if (!confirm('Tem certeza que deseja excluir este usuário?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/usuarios/${userId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('Usuário excluído com sucesso!');
+                // Recarregar a página atual
+                loadPage(currentPage);
+            } else {
+                const error = await response.text();
+                alert('Erro ao excluir usuário: ' + error);
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Erro ao excluir usuário');
+        }
+    }
+
+    // Função para atualizar informações de paginação
+    function updatePaginationInfo(page, total) {
+        const start = (page - 1) * itemsPerPage + 1;
+        const end = Math.min(page * itemsPerPage, total);
+        
+        document.getElementById('pagination-info').textContent = 
+            `Mostrando ${total > 0 ? start : 0} a ${end} de ${total} usuários`;
+        
+        document.getElementById('page-info').textContent = `Página ${page}`;
+        
+        document.getElementById('prev-page').disabled = page <= 1;
+        document.getElementById('next-page').disabled = end >= total;
+    }
+
+    // Função para carregar uma página específica
+    async function loadPage(page) {
+        try {
+            const data = await fetchUsers(page);
+            const users = data.users || [];
+            totalUsers = data.total || 0;
+            
+            renderUsers(users);
+            updatePaginationInfo(page, totalUsers);
+            
+            currentPage = page;
+        } catch (error) {
+            console.error('Erro ao carregar página:', error);
+        }
+    }
+
+    // Função de escape para prevenir XSS
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Event listeners para navegação de páginas
+    document.addEventListener('DOMContentLoaded', function() {
+        // Carregar primeira página
+        loadPage(1);
+
+        // Event listener para página anterior
+        document.getElementById('prev-page').addEventListener('click', function() {
+            if (currentPage > 1) {
+                loadPage(currentPage - 1);
+            }
+        });
+
+        // Event listener para próxima página
+        document.getElementById('next-page').addEventListener('click', function() {
+            loadPage(currentPage + 1);
+        });
+    });
+</script>
+{% endblock %}

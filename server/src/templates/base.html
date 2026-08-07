@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catena Server</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>Catena Server</h1>
+        <nav>
+            <a href="/">Início</a>
+            <span id="auth-links">
+                <a href="/login" id="login-link">Login</a>
+                <a href="#" id="logout-link" style="display:none;">Logout</a>
+                <a href="/adicionar" id="adicionar-link" style="display:none;">Adicionar</a>
+            </span>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <script src="/static/js/js.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
