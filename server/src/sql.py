@@ -1,11 +1,11 @@
 import os
-from database import DATABASE_PATH, get_db_connection
-from server.src.services.auth import create_initial_admin
+from database import DATABASE_PATH, create_db_connection, get_db_connection
+from services.auth import create_initial_admin
 
 def criar_tabelas():
     """Cria todas as tabelas do banco de dados se elas não existirem"""
     
-    conn = get_db_connection()
+    conn = create_db_connection()
     cursor = conn.cursor()
     
     # Criar tabela valor_controlado
@@ -19,23 +19,20 @@ def criar_tabelas():
         )
     """)
     
-    # Criar tabela equipamento
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS equipamento (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            tombo TEXT UNIQUE NOT NULL,
-            uuid TEXT,
-            fabricante_id INTEGER,
-            modelo_id INTEGER,
-            numero_serie TEXT,
-            localizacao TEXT,
-            estado TEXT,
-            inicio_garantia DATE,
-            duracao_garantia INTEGER,
-            FOREIGN KEY (fabricante_id) REFERENCES valor_controlado(id),
-            FOREIGN KEY (modelo_id) REFERENCES valor_controlado(id)
-        )
-    """)
+    CREATE TABLE IF NOT EXISTS equipamento (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tombo TEXT UNIQUE NOT NULL,
+        uuid TEXT,
+        fabricante TEXT,
+        modelo TEXT,
+        numero_serie TEXT,
+        localizacao TEXT,
+        estado TEXT,
+        inicio_garantia DATE,
+        duracao_garantia INTEGER
+    )
+""")
     
     # Criar tabela historico
     cursor.execute("""
@@ -149,6 +146,7 @@ def inicializar_banco():
     
     # Criar/verificar tabelas
     criar_tabelas()
-    create_initial_admin(get_db_connection())
+    conn = create_db_connection()
+    create_initial_admin(conn)
     
     return get_db_connection()

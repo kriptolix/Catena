@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "v9cIXe5r+y0=",
+  "success": true,
+  "projectFilePath": "/home/k/Projetos/Catena/agent/winclient.csproj",
+  "expectedPackageFiles": [
+    "/home/k/.nuget/packages/system.codedom/10.0.10/system.codedom.10.0.10.nupkg.sha512",
+    "/home/k/.nuget/packages/system.management/10.0.10/system.management.10.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}

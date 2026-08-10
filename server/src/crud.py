@@ -1,15 +1,16 @@
 import sqlite3
+import json
 
 from enums import (TipoHistorico,
-    TipoValorControlado, EstadoEquipamento
-)
+                   TipoValorControlado, EstadoEquipamento
+                   )
 from schemas import (
     EquipamentoCreate, EquipamentoUpdate, ValorControladoCreate,
     DefeitoCreate, InventarioHardwareCreate, HistoricoCreate,
     AnotacaoCreate, UsuarioCreate, UsuarioUpdate
 )
 from utils.tombo import gerar_proximo_tombo
-from server.src.services.auth import get_password_hash
+from services.auth import get_password_hash
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 import json
@@ -117,32 +118,34 @@ def get_equipamentos(db: sqlite3.Connection, skip: int = 0, limit: int = 100, fi
         if 'tombo' in filters and filters['tombo']:
             where_clauses.append("e.tombo LIKE ?")
             params.append(f"%{filters['tombo']}%")
-        
+
         if 'fabricante' in filters and filters['fabricante']:
-            joins.append("JOIN valor_controlado vc_fab ON e.fabricante_id = vc_fab.id")
+            joins.append(
+                "JOIN valor_controlado vc_fab ON e.fabricante_id = vc_fab.id")
             where_clauses.append("vc_fab.valor LIKE ?")
             params.append(f"%{filters['fabricante']}%")
-        
+
         if 'modelo' in filters and filters['modelo']:
-            joins.append("JOIN valor_controlado vc_mod ON e.modelo_id = vc_mod.id")
+            joins.append(
+                "JOIN valor_controlado vc_mod ON e.modelo_id = vc_mod.id")
             where_clauses.append("vc_mod.valor LIKE ?")
             params.append(f"%{filters['modelo']}%")
-        
+
         if 'localizacao' in filters and filters['localizacao']:
             where_clauses.append("e.localizacao LIKE ?")
             params.append(f"%{filters['localizacao']}%")
-        
+
         if 'estado' in filters and filters['estado']:
             where_clauses.append("e.estado = ?")
             params.append(filters['estado'])
-        
+
         # Garantia: SIM/NAO
         if 'garantia' in filters:
             if filters['garantia'] == 'SIM':
                 where_clauses.append("e.inicio_garantia IS NOT NULL")
             elif filters['garantia'] == 'NAO':
                 where_clauses.append("e.inicio_garantia IS NULL")
-        
+
         # Defeito: equipamentos com defeitos não resolvidos
         if 'defeito' in filters and filters['defeito']:
             joins.append("JOIN defeito d ON e.id = d.equipamento_id")
@@ -154,7 +157,7 @@ def get_equipamentos(db: sqlite3.Connection, skip: int = 0, limit: int = 100, fi
         full_query += " " + " ".join(joins)
     if where_clauses:
         full_query += " WHERE " + " AND ".join(where_clauses)
-    
+
     full_query += " ORDER BY e.id LIMIT ? OFFSET ?"
     params.extend([limit, skip])
 
@@ -175,7 +178,7 @@ def create_equipamento(db: sqlite3.Connection, equipamento: EquipamentoCreate, u
     # Tratar valores controlados (fabricante, modelo)
     fabricante_id = None
     modelo_id = None
-    
+
     if equipamento.fabricante:
         if isinstance(equipamento.fabricante, str):
             fabricante = get_or_create_valor_controlado(
@@ -183,8 +186,8 @@ def create_equipamento(db: sqlite3.Connection, equipamento: EquipamentoCreate, u
             )
             fabricante_id = fabricante['id']
         else:
-            fabricante_id = equipamento.fabricante_id
-    
+            fabricante_id = equipamento.fabricante
+
     if equipamento.modelo:
         if isinstance(equipamento.modelo, str):
             modelo = get_or_create_valor_controlado(
@@ -192,12 +195,12 @@ def create_equipamento(db: sqlite3.Connection, equipamento: EquipamentoCreate, u
             )
             modelo_id = modelo['id']
         else:
-            modelo_id = equipamento.modelo_id
+            modelo_id = equipamento.modelo
 
     cursor = db.execute(
         """
         INSERT INTO equipamento (
-            tombo, uuid, fabricante_id, modelo_id, numero_serie,
+            tombo, uuid, fabricante, modelo, numero_serie,
             localizacao, estado, inicio_garantia, duracao_garantia
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
@@ -214,16 +217,16 @@ def create_equipamento(db: sqlite3.Connection, equipamento: EquipamentoCreate, u
         ),
     )
     db.commit()
-    
-    equip_id = cursor.lastrowid
-    
+
+    equip = cursor.lastrowid
+
     # Registrar histórico de cadastro
     registrar_historico(
-        db, equip_id, usuario,
+        db, equip, usuario,
         TipoHistorico.CADASTRO, None, f"Cadastro com tombo {tombo}"
     )
 
-    return get_equipamento_by_id(db, equip_id)
+    return get_equipamento_by_id(db, equip)
 
 
 def update_equipamento(db: sqlite3.Connection, tombo: str, equipamento_update: EquipamentoUpdate, usuario: str):
@@ -240,7 +243,7 @@ def update_equipamento(db: sqlite3.Connection, tombo: str, equipamento_update: E
         changes['uuid'] = (db_equip['uuid'], equipamento_update.uuid)
         update_fields.append("uuid = ?")
         params.append(equipamento_update.uuid)
-    
+
     if equipamento_update.fabricante_id is not None and db_equip['fabricante_id'] != equipamento_update.fabricante_id:
         # Buscar nome do fabricante para histórico
         cursor = db.execute(
@@ -259,7 +262,7 @@ def update_equipamento(db: sqlite3.Connection, tombo: str, equipamento_update: E
         )
         update_fields.append("fabricante_id = ?")
         params.append(equipamento_update.fabricante_id)
-    
+
     if equipamento_update.modelo_id is not None and db_equip['modelo_id'] != equipamento_update.modelo_id:
         cursor = db.execute(
             "SELECT valor FROM valor_controlado WHERE id = ?",
@@ -277,29 +280,34 @@ def update_equipamento(db: sqlite3.Connection, tombo: str, equipamento_update: E
         )
         update_fields.append("modelo_id = ?")
         params.append(equipamento_update.modelo_id)
-    
+
     if equipamento_update.numero_serie is not None and db_equip['numero_serie'] != equipamento_update.numero_serie:
-        changes['numero_serie'] = (db_equip['numero_serie'], equipamento_update.numero_serie)
+        changes['numero_serie'] = (
+            db_equip['numero_serie'], equipamento_update.numero_serie)
         update_fields.append("numero_serie = ?")
         params.append(equipamento_update.numero_serie)
-    
+
     if equipamento_update.localizacao is not None and db_equip['localizacao'] != equipamento_update.localizacao:
-        changes['localizacao'] = (db_equip['localizacao'], equipamento_update.localizacao)
+        changes['localizacao'] = (
+            db_equip['localizacao'], equipamento_update.localizacao)
         update_fields.append("localizacao = ?")
         params.append(equipamento_update.localizacao)
-    
+
     if equipamento_update.estado is not None and db_equip['estado'] != equipamento_update.estado.value:
-        changes['estado'] = (db_equip['estado'], equipamento_update.estado.value)
+        changes['estado'] = (db_equip['estado'],
+                             equipamento_update.estado.value)
         update_fields.append("estado = ?")
         params.append(equipamento_update.estado.value)
-    
+
     if equipamento_update.inicio_garantia is not None and db_equip['inicio_garantia'] != equipamento_update.inicio_garantia:
-        changes['inicio_garantia'] = (db_equip['inicio_garantia'], equipamento_update.inicio_garantia)
+        changes['inicio_garantia'] = (
+            db_equip['inicio_garantia'], equipamento_update.inicio_garantia)
         update_fields.append("inicio_garantia = ?")
         params.append(equipamento_update.inicio_garantia)
-    
+
     if equipamento_update.duracao_garantia is not None and db_equip['duracao_garantia'] != equipamento_update.duracao_garantia:
-        changes['duracao_garantia'] = (db_equip['duracao_garantia'], equipamento_update.duracao_garantia)
+        changes['duracao_garantia'] = (
+            db_equip['duracao_garantia'], equipamento_update.duracao_garantia)
         update_fields.append("duracao_garantia = ?")
         params.append(equipamento_update.duracao_garantia)
 
@@ -341,13 +349,13 @@ def delete_equipamento(db: sqlite3.Connection, tombo: str, usuario: str):
     db_equip = get_equipamento(db, tombo)
     if not db_equip:
         return False
-    
+
     # Registrar auditoria
     registrar_auditoria(
         db, usuario, "exclusao_equipamento",
         f"Tombo {tombo}", "Equipamento excluído"
     )
-    
+
     db.execute("DELETE FROM equipamento WHERE tombo = ?", (tombo,))
     db.commit()
     return True
@@ -371,7 +379,8 @@ def registrar_historico(
             valor_anterior, valor_novo, data_hora
         ) VALUES (?, ?, ?, ?, ?, ?)
         """,
-        (equipamento_id, usuario, tipo.value, valor_anterior, valor_novo, datetime.now())
+        (equipamento_id, usuario, tipo.value,
+         valor_anterior, valor_novo, datetime.now())
     )
     db.commit()
 
@@ -386,12 +395,13 @@ def create_defeito(db: sqlite3.Connection, defeito: DefeitoCreate, usuario: str)
             equipamento_id, componente, descricao, resolvido
         ) VALUES (?, ?, ?, ?)
         """,
-        (defeito.equipamento_id, defeito.componente, defeito.descricao, defeito.resolvido or 0)
+        (defeito.equipamento_id, defeito.componente,
+         defeito.descricao, defeito.resolvido or 0)
     )
     db.commit()
-    
+
     defeito_id = cursor.lastrowid
-    
+
     # Registrar histórico
     equip = get_equipamento_by_id(db, defeito.equipamento_id)
     if equip:
@@ -400,7 +410,7 @@ def create_defeito(db: sqlite3.Connection, defeito: DefeitoCreate, usuario: str)
             TipoHistorico.MUDANCA_ESTADO,
             equip['estado'], "defeito_registrado"
         )
-    
+
     cursor = db.execute(
         "SELECT * FROM defeito WHERE id = ?",
         (defeito_id,)
@@ -414,16 +424,16 @@ def resolver_defeito(db: sqlite3.Connection, defeito_id: int, usuario: str):
         (defeito_id,)
     )
     db_defeito = cursor.fetchone()
-    
+
     if not db_defeito:
         return None
-    
+
     db.execute(
         "UPDATE defeito SET resolvido = 1 WHERE id = ?",
         (defeito_id,)
     )
     db.commit()
-    
+
     # Registrar histórico
     equip = get_equipamento_by_id(db, db_defeito['equipamento_id'])
     if equip:
@@ -432,7 +442,7 @@ def resolver_defeito(db: sqlite3.Connection, defeito_id: int, usuario: str):
             TipoHistorico.MUDANCA_ESTADO,
             "defeituoso", "defeito_resolvido"
         )
-    
+
     cursor = db.execute(
         "SELECT * FROM defeito WHERE id = ?",
         (defeito_id,)
@@ -469,7 +479,7 @@ def processar_inventario(
     campos = ['cpu', 'memoria', 'armazenamento', 'gpu',
               'placa_mae', 'bios', 'sistema_operacional']
     mudou = False
-    
+
     if ultimo:
         for campo in campos:
             old_val = ultimo[campo]
@@ -491,27 +501,31 @@ def processar_inventario(
             """,
             (
                 equipamento_id,
-                inventario_data.get('cpu'),
-                inventario_data.get('memoria'),
-                inventario_data.get('armazenamento'),
-                inventario_data.get('gpu'),
-                inventario_data.get('placa_mae'),
-                inventario_data.get('bios'),
-                inventario_data.get('sistema_operacional'),
-                inventario_data.get('json_original'),
+                json.dumps(inventario_data.get("cpu"), ensure_ascii=False),
+                json.dumps(inventario_data.get("memoria"), ensure_ascii=False),
+                json.dumps(inventario_data.get(
+                    "armazenamento"), ensure_ascii=False),
+                json.dumps(inventario_data.get("gpu"), ensure_ascii=False),
+                json.dumps(inventario_data.get(
+                    "placa_mae"), ensure_ascii=False),
+                json.dumps(inventario_data.get("bios"), ensure_ascii=False),
+                json.dumps(inventario_data.get(
+                    "sistema_operacional"), ensure_ascii=False),
+                json.dumps(inventario_data.get(
+                    "json_original"), ensure_ascii=False),
                 datetime.now()
             )
         )
         db.commit()
         novo_id = cursor.lastrowid
-        
+
         # Registrar histórico de alteração de hardware
         registrar_historico(
             db, equipamento_id, usuario,
             TipoHistorico.ALTERACAO_HARDWARE,
             "Inventário anterior", "Novo inventário"
         )
-        
+
         cursor = db.execute(
             "SELECT * FROM inventario_hardware WHERE id = ?",
             (novo_id,)
@@ -528,7 +542,7 @@ def processar_inventario(
             (datetime.now(), ultimo['id'])
         )
         db.commit()
-        
+
         cursor = db.execute(
             "SELECT * FROM inventario_hardware WHERE id = ?",
             (ultimo['id'],)
@@ -549,7 +563,7 @@ def create_anotacao(db: sqlite3.Connection, anotacao: AnotacaoCreate):
         (anotacao.equipamento_id, anotacao.usuario, anotacao.texto, datetime.now())
     )
     db.commit()
-    
+
     cursor = db.execute(
         "SELECT * FROM anotacao WHERE id = ?",
         (cursor.lastrowid,)
@@ -579,7 +593,7 @@ def create_usuario(db: sqlite3.Connection, usuario: UsuarioCreate):
         (usuario.username, hashed, usuario.is_admin or 0, 1)
     )
     db.commit()
-    
+
     cursor = db.execute(
         "SELECT * FROM usuario WHERE id = ?",
         (cursor.lastrowid,)
@@ -591,22 +605,22 @@ def update_usuario(db: sqlite3.Connection, username: str, usuario_update: Usuari
     db_user = get_usuario_by_username(db, username)
     if not db_user:
         return None
-    
+
     update_fields = []
     params = []
-    
+
     if usuario_update.password:
         update_fields.append("hashed_password = ?")
         params.append(get_password_hash(usuario_update.password))
-    
+
     if usuario_update.is_admin is not None:
         update_fields.append("is_admin = ?")
         params.append(1 if usuario_update.is_admin else 0)
-    
+
     if usuario_update.ativo is not None:
         update_fields.append("ativo = ?")
         params.append(1 if usuario_update.ativo else 0)
-    
+
     if update_fields:
         params.append(username)
         query = f"""
@@ -616,7 +630,7 @@ def update_usuario(db: sqlite3.Connection, username: str, usuario_update: Usuari
         """
         db.execute(query, params)
         db.commit()
-    
+
     return get_usuario_by_username(db, username)
 
 

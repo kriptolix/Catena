@@ -1,0 +1,2 @@
+DOTNET_SYSTEM_NET_DISABLEIPV6=1 dotnet restore
+DOTNET_SYSTEM_NET_DISABLEIPV6=1 dotnet publish -r linux-x64 --self-contained true -p:PublishSingleFile=true

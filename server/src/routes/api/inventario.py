@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 import sqlite3
 
-from database import get_db
+from database import get_db_connection
 from schemas import InventarioRecebido, EquipamentoCreate, Equipamento, EquipamentoUpdate
 from crud import (
     get_equipamento, get_equipamento_by_id, create_equipamento, 
     processar_inventario, update_equipamento
 )
-from server.src.services.auth import get_current_active_user
+from services.auth import get_current_active_user
 from utils.tombo import gerar_proximo_tombo
 from typing import Optional, List, Dict, Any
+from enums import EstadoEquipamento
 
 UserDict = Dict[str, Any]
 
@@ -18,93 +19,227 @@ router = APIRouter(prefix="/api/v1", tags=["inventario"])
 @router.post("/inventario", response_model=dict)
 async def receber_inventario(
     payload: InventarioRecebido,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
-    # Verificar se equipamento já existe pelo tombo ou uuid
+    # ============================================================
+    # 1. Dados básicos
+    # ============================================================
+
+    uuid = payload.identificacao.uuid if payload.identificacao else None
+
+    fabricante = (
+        payload.equipamento.fabricante
+        if payload.equipamento
+        else None
+    )
+
+    modelo = (
+        payload.equipamento.modelo
+        if payload.equipamento
+        else None
+    )
+
+    numero_serie = (
+        payload.equipamento.numeroSerie
+        if payload.equipamento
+        else None
+    )
+
+    # Valores "N/A" não devem ser tratados como dados reais
+    if uuid == "N/A":
+        uuid = None
+
+    if numero_serie == "N/A":
+        numero_serie = None
+
+    tombo = payload.tombo.strip() if payload.tombo else None
+
+    # ============================================================
+    # 2. Procurar equipamento existente
+    # ============================================================
+
     equip = None
-    if payload.tombo:
-        equip = get_equipamento(db, payload.tombo)
-    
-    if not equip and payload.uuid:
-        # Buscar equipamento por UUID
+
+    if tombo:
+        equip = get_equipamento(db, tombo)
+
+    if not equip and uuid:
         cursor = db.execute(
-            "SELECT * FROM equipamento WHERE uuid = ? LIMIT 1",
-            (payload.uuid,)
+            """
+            SELECT *
+            FROM equipamento
+            WHERE uuid = ?
+            LIMIT 1
+            """,
+            (uuid,)
         )
+
         row = cursor.fetchone()
+
         if row:
-            equip = dict(row)
+            equip = dict(row)    
 
-    # Se não existe, criar novo
+    # ============================================================
+    # 4. Criar equipamento
+    # ============================================================
+
     if not equip:
-        # Gerar tombo se não fornecido
-        tombo = payload.tombo if payload.tombo else gerar_proximo_tombo()
-        
-        # Preparar dados para criação
-        equip_data = EquipamentoCreate(
-            tombo=tombo,
-            uuid=payload.uuid,
-            fabricante=payload.fabricante,  # será tratado como string
-            modelo=payload.modelo,
-            numero_serie=payload.numero_serie,
-            localizacao=payload.localizacao,
-            estado=payload.estado,
-            inicio_garantia=payload.inicio_garantia,
-            duracao_garantia=payload.duracao_garantia
+
+        novo_tombo = (
+            tombo
+            if tombo
+            else gerar_proximo_tombo()
         )
-        equip = create_equipamento(db, equip_data, current_user['username'])
+
+        equip_data = EquipamentoCreate(
+            tombo=novo_tombo,
+            uuid=uuid,
+            fabricante=fabricante,
+            modelo=modelo,
+            numero_serie=numero_serie,
+            localizacao=payload.localizacao,
+            estado=EstadoEquipamento.FUNCIONAL,
+            inicio_garantia=None,
+            duracao_garantia=None
+        )
+
+        equip = create_equipamento(
+            db,
+            equip_data,
+            current_user["username"]
+        )
+
+    # ============================================================
+    # 5. Atualizar equipamento existente
+    # ============================================================
+
     else:
-        # Atualizar campos básicos se fornecidos
+
         update_data = {}
-        
-        if payload.localizacao and equip['localizacao'] != payload.localizacao:
-            update_data['localizacao'] = payload.localizacao
-        
-        if payload.estado and equip['estado'] != payload.estado:
-            update_data['estado'] = payload.estado
-        
-        if payload.inicio_garantia and equip['inicio_garantia'] != payload.inicio_garantia:
-            update_data['inicio_garantia'] = payload.inicio_garantia
-        
-        if payload.duracao_garantia and equip['duracao_garantia'] != payload.duracao_garantia:
-            update_data['duracao_garantia'] = payload.duracao_garantia
-        
+
+        if uuid and equip.get("uuid") != uuid:
+            update_data["uuid"] = uuid
+
+        if (
+            fabricante
+            and equip.get("fabricante_id") != fabricante
+        ):
+            update_data["fabricante_id"] = fabricante
+
+        if (
+            modelo
+            and equip.get("modelo_id") != modelo
+        ):
+            update_data["modelo_id"] = modelo
+
+        if (
+            numero_serie
+            and equip.get("numero_serie") != numero_serie
+        ):
+            update_data["numero_serie"] = numero_serie
+
+        if (
+            payload.localizacao
+            and equip.get("localizacao") != payload.localizacao
+        ):
+            update_data["localizacao"] = payload.localizacao
+
         if update_data:
-            equip_update = EquipamentoUpdate(**update_data)
-            equip = update_equipamento(db, equip['tombo'], equip_update, current_user['username'])
 
-    # Processar inventário de hardware
+            equip_update = EquipamentoUpdate(
+                **update_data
+            )
+
+            equip = update_equipamento(
+                db,
+                equip["tombo"],
+                equip_update,
+                current_user["username"]
+            )
+
+    # ============================================================
+    # 6. Montar inventário de hardware
+    # ============================================================
+
     inventario_data = {
-        'cpu': payload.cpu,
-        'memoria': payload.memoria,
-        'armazenamento': payload.armazenamento,
-        'gpu': payload.gpu,
-        'placa_mae': payload.placa_mae,
-        'bios': payload.bios,
-        'sistema_operacional': payload.sistema_operacional,
-        'json_original': payload.json_original
-    }
-    
-    # Obter o ID do equipamento (pode ser dict ou None)
-    equip_id = equip['id'] if equip else None
-    if equip_id:
-        processar_inventario(db, equip_id, inventario_data, current_user['username'])
+        "cpu": (
+            payload.processador.model_dump()
+            if payload.processador
+            else None
+        ),
 
-    # Buscar equipamento atualizado para retornar
-    if equip and equip.get('tombo'):
-        equip_atualizado = get_equipamento(db, equip['tombo'])
+        "memoria": (
+            payload.memoria.model_dump()
+            if payload.memoria
+            else None
+        ),
+
+        "armazenamento": [
+            disco.model_dump()
+            for disco in payload.discos
+        ],
+
+        "gpu": [
+            video.model_dump()
+            for video in payload.video
+        ],
+
+        "placa_mae": (
+            payload.placaMae.model_dump()
+            if payload.placaMae
+            else None
+        ),
+
+        "bios": (
+            payload.bios.model_dump()
+            if payload.bios
+            else None
+        ),
+
+        "sistema_operacional": (
+            payload.sistema.model_dump()
+            if payload.sistema
+            else None
+        ),
+
+        "json_original": payload.model_dump()
+    }
+
+    # ============================================================
+    # 7. Salvar inventário
+    # ============================================================
+
+    equip_id = equip.get("id") if equip else None
+
+    if equip_id:
+        processar_inventario(
+            db,
+            equip_id,
+            inventario_data,
+            current_user["username"]
+        )
+
+    # ============================================================
+    # 8. Retornar equipamento atualizado
+    # ============================================================
+
+    if equip and equip.get("tombo"):
+
+        equip_atualizado = get_equipamento(
+            db,
+            equip["tombo"]
+        )
+
         if equip_atualizado:
             return dict(equip_atualizado)
-    
-    # Se não encontrar, retornar o que temos
-    return dict(equip) if equip else None
 
+    return dict(equip) if equip else {}
 
 @router.get("/inventario/ultimo/{equipamento_id}")
 async def obter_ultimo_inventario(
     equipamento_id: int,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Retorna o último inventário de hardware de um equipamento"""
@@ -132,7 +267,7 @@ async def obter_ultimo_inventario(
 async def obter_historico_inventario(
     equipamento_id: int,
     limit: int = 10,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Retorna o histórico de inventários de um equipamento"""
@@ -153,7 +288,7 @@ async def obter_historico_inventario(
 @router.post("/inventario/forcar/{equipamento_id}")
 async def forcar_inventario(
     equipamento_id: int,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Força a criação de um novo registro de inventário para um equipamento"""

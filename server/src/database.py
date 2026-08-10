@@ -1,26 +1,30 @@
 # database.py
-from contextlib import contextmanager
 import sqlite3
-import os
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATABASE_DIR = BASE_DIR / "data"
+DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 
-DATABASE_PATH = os.path.join(BASE_DIR, "data_collector.db")
+DATABASE_PATH = DATABASE_DIR / "data_collector.db"
 
 print(f"Database path: {DATABASE_PATH}")
 
-def get_db_connection():
-    """Retorna uma conexão com o banco de dados"""
-    os.makedirs(os.path.dirname(os.path.abspath(DATABASE_PATH)), exist_ok=True)
-    conn = sqlite3.connect(DATABASE_PATH)
+def create_db_connection():
+    conn = sqlite3.connect(
+        DATABASE_PATH,
+        check_same_thread=False
+    )
+
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
+
     return conn
 
-# FASTAPI Dependency
-def get_db():
-    """Dependência para FastAPI"""
-    conn = get_db_connection()
+def get_db_connection():
+    conn = create_db_connection()
+
     try:
         yield conn
         conn.commit()
@@ -29,6 +33,7 @@ def get_db():
         raise
     finally:
         conn.close()
+
 
 def init_db():
     """Inicializa o banco de dados com todas as tabelas"""

@@ -1,11 +1,11 @@
-from server.src.services.auth import get_current_active_user
+from services.auth import get_current_active_user
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 import sqlite3
-from database import get_db
+from database import get_db_connection
 from schemas import Usuario, UsuarioCreate, UsuarioUpdate, Token
 from crud import get_usuario_by_username, create_usuario, update_usuario
-from server.src.services.auth import get_current_admin_user, authenticate_user, create_access_token, get_current_active_user
+from services.auth import get_current_admin_user, authenticate_user, create_access_token, get_current_active_user
 from typing import Dict, Any
 
 # Type alias para usuário
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/v1", tags=["usuarios"])
 @router.post("/token", response_model=Token)
 def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: sqlite3.Connection = Depends(get_db)
+    db: sqlite3.Connection = Depends(get_db_connection)
 ):
     """Endpoint de login que retorna um token JWT"""
     user = authenticate_user(db, form_data.username, form_data.password)
@@ -34,7 +34,7 @@ def login_for_access_token(
 @router.post("/usuarios", response_model=Usuario)
 async def create_new_user(
     usuario: UsuarioCreate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -52,7 +52,7 @@ async def create_new_user(
 
 @router.get("/usuarios", response_model=list[Usuario])
 async def list_users(
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -72,7 +72,7 @@ async def list_users(
 @router.get("/usuarios/{username}", response_model=Usuario)
 async def get_user(
     username: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -94,7 +94,7 @@ async def get_user(
 async def update_user(
     username: str,
     usuario_update: UsuarioUpdate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -115,7 +115,7 @@ async def update_user(
 @router.delete("/usuarios/{username}")
 async def delete_user(
     username: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -151,13 +151,13 @@ async def delete_user(
 async def change_my_password(
     old_password: str,
     new_password: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """
     Permite que um usuário mude sua própria senha.
     """
-    from server.src.services.auth import verify_password, get_password_hash
+    from services.auth import verify_password, get_password_hash
 
     # Verificar senha atual
     user = get_usuario_by_username(db, current_user['username'])
@@ -194,7 +194,7 @@ async def get_my_profile(
 @router.put("/usuarios/me", response_model=Usuario)
 async def update_my_profile(
     usuario_update: UsuarioUpdate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """

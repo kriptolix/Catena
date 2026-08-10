@@ -1,5 +1,5 @@
 from fastapi import Depends
-from server.src.services.auth import get_current_active_user, get_current_admin_user
+from services.auth import get_current_active_user, get_current_admin_user
 from typing import Dict, Any
 
 # Como os usuários agora são dicionários, vamos manter a tipagem genérica

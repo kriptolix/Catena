@@ -5,7 +5,7 @@ import os
 
 from database import init_db
 from routes import pages
-from server.src.routes.api import admin, equipamentos, frontend, inventario, status, usuarios
+from routes.api import admin, equipamentos, frontend, inventario, status, usuarios
 
 # Inicializar banco de dados ao iniciar a aplicação
 print("🚀 Iniciando aplicação...")

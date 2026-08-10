@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 import sqlite3
 from typing import Optional, List, Dict, Any
-from database import get_db
+from database import get_db_connection
 from schemas import ValorControlado, ValorControladoCreate
 from crud import get_valor_controlado_by_tipo_valor, create_valor_controlado
-from server.src.services.auth import get_current_admin_user
+from services.auth import get_current_admin_user
 from enums import TipoValorControlado
 from utils.normalizacao import normalizar_valor, verificar_valores_duplicados, merge_valores_controlados
 
@@ -19,7 +19,7 @@ async def normalizar(
     tipo: TipoValorControlado,
     valor_antigo: str,
     valor_novo: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -51,7 +51,7 @@ async def normalizar(
 @router.post("/normalizar/batch")
 async def normalizar_batch(
     normalizacoes: List[dict],
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -98,7 +98,7 @@ async def list_valores_controlados(
     search: Optional[str] = None,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -131,7 +131,7 @@ async def list_valores_controlados(
 
 @router.get("/valores_controlados/tipos")
 async def list_tipos_valores_controlados(
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -161,7 +161,7 @@ async def list_tipos_valores_controlados(
 @router.get("/valores_controlados/{valor_id}", response_model=ValorControlado)
 async def get_valor_controlado(
     valor_id: int,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -190,7 +190,7 @@ async def get_valor_controlado(
 @router.post("/valores_controlados", response_model=ValorControlado)
 async def create_valor_controlado_endpoint(
     valor: ValorControladoCreate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -219,7 +219,7 @@ async def create_valor_controlado_endpoint(
 async def delete_valor_controlado(
     valor_id: int,
     force: bool = Query(False, description="Forçar exclusão mesmo se estiver em uso"),
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -302,7 +302,7 @@ async def delete_valor_controlado(
 @router.get("/valores_controlados/duplicados")
 async def verificar_duplicados(
     tipo: Optional[TipoValorControlado] = None,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -328,7 +328,7 @@ async def mesclar_valores_controlados(
     tipo: TipoValorControlado,
     valor_principal: str,
     valores_a_remover: List[str],
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """
@@ -376,7 +376,7 @@ async def mesclar_valores_controlados(
 
 @router.get("/stats/valores_controlados")
 async def stats_valores_controlados(
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)
 ):
     """

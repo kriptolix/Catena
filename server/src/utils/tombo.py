@@ -1,5 +1,5 @@
 import sqlite3
-from database import get_db_connection
+from database import create_db_connection
 from typing import Optional
 
 
@@ -19,7 +19,7 @@ def gerar_proximo_tombo(prefixo: str = "XX") -> str:
         >>> gerar_proximo_tombo("EQ")
         'EQ000001'
     """
-    conn = get_db_connection()
+    conn = create_db_connection()
     try:
         # Buscar o maior tombo que começa com o prefixo especificado
         cursor = conn.execute(
@@ -67,7 +67,7 @@ def gerar_proximo_tombo_com_validacao(prefixo: str = "XX") -> str:
     Returns:
         Novo tombo único no formato {prefixo}000001
     """
-    conn = get_db_connection()
+    conn = create_db_connection()
     try:
         # Buscar todos os números de tombo com o prefixo
         cursor = conn.execute(
@@ -149,7 +149,7 @@ def gerar_proximo_tombo_com_prefixo_dinamico(prefixo: str = "XX", tamanho_numero
     Returns:
         Novo tombo no formato {prefixo}{numero:0{tamanho_numero}d}
     """
-    conn = get_db_connection()
+    conn = create_db_connection()
     try:
         # Buscar o maior tombo que começa com o prefixo
         cursor = conn.execute(
@@ -196,7 +196,7 @@ def obter_proximo_tombo_disponivel(prefixo: str = "XX") -> str:
     Returns:
         Próximo tombo disponível
     """
-    conn = get_db_connection()
+    conn = create_db_connection()
     try:
         # Buscar todos os tombos que começam com o prefixo
         cursor = conn.execute(
@@ -252,7 +252,7 @@ def resetar_sequencia_tombo(prefixo: str = "XX", valor_inicial: int = 1) -> bool
     import warnings
     warnings.warn("Esta função é apenas para testes! Não use em produção.", UserWarning)
     
-    conn = get_db_connection()
+    conn = create_db_connection()
     try:
         # Verificar se existem equipamentos com o prefixo
         cursor = conn.execute(

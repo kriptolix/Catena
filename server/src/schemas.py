@@ -21,8 +21,8 @@ class ValorControlado(ValorControladoBase):
 class EquipamentoBase(BaseModel):
     tombo: Optional[str] = None  # Se não fornecido, gerado automaticamente
     uuid: Optional[str] = None
-    fabricante_id: Optional[int] = None
-    modelo_id: Optional[int] = None
+    fabricante: Optional[str] = None
+    modelo: Optional[str] = None
     numero_serie: Optional[str] = None
     localizacao: str  # obrigatório
     estado: EstadoEquipamento = EstadoEquipamento.FUNCIONAL
@@ -34,8 +34,8 @@ class EquipamentoCreate(EquipamentoBase):
 
 class EquipamentoUpdate(BaseModel):
     uuid: Optional[str] = None
-    fabricante_id: Optional[int] = None
-    modelo_id: Optional[int] = None
+    fabricante: Optional[str] = None
+    modelo: Optional[str] = None
     numero_serie: Optional[str] = None
     localizacao: Optional[str] = None
     estado: Optional[EstadoEquipamento] = None
@@ -157,22 +157,93 @@ class LoginRequest(BaseModel):
     password: str
 
 # Schemas para recebimento de inventário (POST /api/v1/inventario)
-class InventarioRecebido(BaseModel):
-    tombo: Optional[str] = None  # se não fornecido, gerado
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
+
+
+class Identificacao(BaseModel):
     uuid: Optional[str] = None
-    fabricante: Optional[str] = None  # pode ser string, será normalizado
+
+
+class EquipamentoInventario(BaseModel):
+    fabricante: Optional[str] = None
     modelo: Optional[str] = None
-    numero_serie: Optional[str] = None
-    localizacao: str  # obrigatório
-    estado: EstadoEquipamento = EstadoEquipamento.FUNCIONAL
-    inicio_garantia: Optional[datetime] = None
-    duracao_garantia: Optional[int] = None
-    # Dados de hardware
-    cpu: Optional[str] = None
-    memoria: Optional[str] = None
-    armazenamento: Optional[str] = None
-    gpu: Optional[str] = None
-    placa_mae: Optional[str] = None
-    bios: Optional[str] = None
-    sistema_operacional: Optional[str] = None
-    json_original: Optional[Dict[str, Any]] = None
+    numeroSerie: Optional[str] = None
+
+
+class BiosInventario(BaseModel):
+    fabricante: Optional[str] = None
+    versao: Optional[str] = None
+    data: Optional[str] = None
+
+
+class PlacaMaeInventario(BaseModel):
+    fabricante: Optional[str] = None
+    modelo: Optional[str] = None
+    numeroSerie: Optional[str] = None
+
+
+class SistemaInventario(BaseModel):
+    nome: Optional[str] = None
+    versao: Optional[str] = None
+    arquitetura: Optional[str] = None
+
+
+class ProcessadorInventario(BaseModel):
+    modelo: Optional[str] = None
+    fabricante: Optional[str] = None
+    nucleos: Optional[int] = None
+    threads: Optional[int] = None
+    clockMaximoMHz: Optional[int] = None
+
+
+class ModuloMemoria(BaseModel):
+    fabricante: Optional[str] = None
+    capacidadeGB: Optional[float] = None
+    velocidadeMHz: Optional[int] = None
+    tipo: Optional[str] = None
+    partNumber: Optional[str] = None
+    numeroSerie: Optional[str] = None
+    slot: Optional[str] = None
+
+
+class MemoriaInventario(BaseModel):
+    totalGB: Optional[float] = None
+    modulos: List[ModuloMemoria] = []
+
+
+class DiscoInventario(BaseModel):
+    modelo: Optional[str] = None
+    fabricante: Optional[str] = None
+    interface: Optional[str] = None
+    tamanhoGB: Optional[float] = None
+    serial: Optional[str] = None
+    tipo: Optional[str] = None
+
+
+class VideoInventario(BaseModel):
+    modelo: Optional[str] = None
+    memoriaGB: Optional[float] = None
+
+
+class RedeInventario(BaseModel):
+    modelo: Optional[str] = None
+    mac: Optional[str] = None
+    velocidadeMbps: Optional[int] = None
+
+class InventarioRecebido(BaseModel):
+    identificacao: Optional[Identificacao] = None
+    equipamento: Optional[EquipamentoInventario] = None
+    bios: Optional[BiosInventario] = None
+    placaMae: Optional[PlacaMaeInventario] = None
+    sistema: Optional[SistemaInventario] = None
+    processador: Optional[ProcessadorInventario] = None
+    memoria: Optional[MemoriaInventario] = None
+    discos: List[DiscoInventario] = []
+    video: List[VideoInventario] = []
+    rede: List[RedeInventario] = []
+
+    tombo: Optional[str] = None
+    localizacao: Optional[str] = None
+    observacoes: Optional[str] = None
+    dataInventario: Optional[str] = None

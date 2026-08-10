@@ -1,0 +1,5 @@
+/home/k/Projetos/Catena/winclient/bin/Release/net10.0/linux-x64/publish/winclient.pdb
+/home/k/Projetos/Catena/winclient/bin/Release/net10.0/linux-x64/publish/WebGui/page.css
+/home/k/Projetos/Catena/winclient/bin/Release/net10.0/linux-x64/publish/WebGui/page.html
+/home/k/Projetos/Catena/winclient/bin/Release/net10.0/linux-x64/publish/WebGui/page.js
+/home/k/Projetos/Catena/winclient/bin/Release/net10.0/linux-x64/publish/winclient

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 import sqlite3
 from typing import Optional, List
-from database import get_db
+from database import get_db_connection
 from schemas import (
     Equipamento, EquipamentoCreate, EquipamentoUpdate, 
     DefeitoCreate, Defeito, AnotacaoCreate, Anotacao, 
@@ -12,7 +12,7 @@ from crud import (
     update_equipamento, delete_equipamento,
     create_defeito, resolver_defeito, create_anotacao
 )
-from server.src.services.auth import get_current_active_user, get_current_admin_user
+from services.auth import get_current_active_user, get_current_admin_user
 from enums import EstadoEquipamento
 from typing import Dict, Any
 
@@ -32,7 +32,7 @@ async def list_equipamentos(
     estado: Optional[EstadoEquipamento] = None,
     garantia: Optional[str] = None,  # 'SIM' ou 'NAO'
     defeito: Optional[bool] = False,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
     """
@@ -62,7 +62,7 @@ async def list_equipamentos(
 @router.get("/{tombo}", response_model=Equipamento)
 async def get_equipamento_detail(
     tombo: str, 
-    db: sqlite3.Connection = Depends(get_db), 
+    db: sqlite3.Connection = Depends(get_db_connection), 
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
     """Obtém detalhes de um equipamento específico"""
@@ -75,7 +75,7 @@ async def get_equipamento_detail(
 @router.post("/", response_model=Equipamento)
 async def create_new_equipamento(
     equipamento: EquipamentoCreate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Cria um novo equipamento"""
@@ -89,7 +89,7 @@ async def create_new_equipamento(
 async def update_existing_equipamento(
     tombo: str,
     equipamento_update: EquipamentoUpdate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Atualiza um equipamento existente"""
@@ -102,7 +102,7 @@ async def update_existing_equipamento(
 @router.delete("/{tombo}")
 async def delete_existing_equipamento(
     tombo: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)  # apenas admin
 ):
     """Remove um equipamento (apenas administradores)"""
@@ -117,7 +117,7 @@ async def delete_existing_equipamento(
 async def add_defeito(
     tombo: str,
     defeito: DefeitoCreate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Adiciona um defeito a um equipamento"""
@@ -133,7 +133,7 @@ async def add_defeito(
 @router.patch("/defeitos/{defeito_id}/resolver", response_model=Defeito)
 async def resolve_defeito(
     defeito_id: int,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Marca um defeito como resolvido"""
@@ -148,7 +148,7 @@ async def resolve_defeito(
 async def add_anotacao(
     tombo: str,
     anotacao: AnotacaoCreate,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
     """Adiciona uma anotação a um equipamento"""
@@ -165,7 +165,7 @@ async def add_anotacao(
 @router.get("/{tombo}/historico", response_model=List[Historico])
 async def get_historico(
     tombo: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
     """Obtém o histórico de alterações de um equipamento"""
@@ -189,7 +189,7 @@ async def get_historico(
 @router.get("/{tombo}/inventarios", response_model=List[InventarioHardware])
 async def get_inventarios(
     tombo: str,
-    db: sqlite3.Connection = Depends(get_db),
+    db: sqlite3.Connection = Depends(get_db_connection),
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
     """Obtém o histórico de inventários de hardware de um equipamento"""
