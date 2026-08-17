@@ -5,10 +5,11 @@ import os
 
 from database import init_db
 from routes import pages
-from routes.api import admin, equipamentos, frontend, inventario, status, usuarios
+from routes.api import equipment, status, user, inventory
+
 
 # Inicializar banco de dados ao iniciar a aplicação
-print("🚀 Iniciando aplicação...")
+print("Starting application...")
 conn = init_db()
 conn.close()  # Fechar conexão inicial
 
@@ -31,10 +32,9 @@ app.add_middleware(
 
 # Incluir routers
 app.include_router(status.router)
-app.include_router(inventario.router)
-app.include_router(equipamentos.router)
-app.include_router(usuarios.router)
-app.include_router(admin.router)
+app.include_router(inventory.router)
+app.include_router(equipment.router)
+app.include_router(user.router)
 app.include_router(pages.router)
 # app.include_router(frontend.router)
 

@@ -39,46 +39,46 @@ namespace Agent.Services
 
                 CollectOperatingSystem(info);
 
-                if (IsEmpty(info.Equipamento))
+                if (IsEmpty(info.Equipment))
                     CollectComputerFromSys(info);
 
-                if (IsEmpty(info.Identificacao))
+                if (IsEmpty(info.Identification))
                     CollectIdentificationFromSys(info);
 
                 if (IsEmpty(info.BIOS))
                     CollectBiosFromSys(info);
 
-                if (IsEmpty(info.PlacaMae))
+                if (IsEmpty(info.Motherboard))
                     CollectMotherboardFromSys(info);
 
-                if (IsEmpty(info.Processador))
+                if (IsEmpty(info.Processor))
                     CollectProcessorFromProc(info);
 
-                if (info.Memoria == null ||
-                    info.Memoria.TotalGB <= 0)
+                if (info.Memory == null ||
+                    info.Memory.TotalGB <= 0)
                 {
                     CollectMemoryFromProc(info);
                 }
 
-                if (info.Discos == null ||
-                    info.Discos.Count == 0)
+                if (info.Disk == null ||
+                    info.Disk.Count == 0)
                 {
-                    info.Discos = CollectDisksFromSys();
+                    info.Disk = CollectDisksFromSys();
                 }
 
-                if (info.Video == null ||
-                    info.Video.Count == 0)
+                if (info.GPU == null ||
+                    info.GPU.Count == 0)
                 {
-                    info.Video = CollectVideoFromSys();
+                    info.GPU = CollectVideoFromSys();
                 }
 
-                if (info.Rede == null ||
-                    info.Rede.Count == 0)
+                if (info.Network == null ||
+                    info.Network.Count == 0)
                 {
-                    info.Rede = CollectNetworkFromSys();
+                    info.Network = CollectNetworkFromSys();
                 }
 
-                info.DataInventario =
+                info.Date =
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
                 return info;
@@ -86,7 +86,7 @@ namespace Agent.Services
             catch (Exception ex)
             {
                 throw new Exception(
-                    $"Erro ao coletar informações de hardware: {ex.Message}",
+                    $"Error collecting hardware information: {ex.Message}",
                     ex);
             }
         }
@@ -184,14 +184,14 @@ namespace Agent.Services
             if (record == null)
                 return;
 
-            info.Equipamento = new Equipment
+            info.Equipment = new Equipment
             {
-                Fabricante = record.GetString(4),
-                Modelo = record.GetString(5),
-                NumeroSerie = record.GetString(7)
+                Manufacturer = record.GetString(4),
+                Model = record.GetString(5),
+                SerialNumber = record.GetString(7)
             };
 
-            info.Identificacao = new Identification
+            info.Identification = new Identification
             {
                 UUID = record.GetUuid(8)
             };
@@ -212,9 +212,9 @@ namespace Agent.Services
 
             info.BIOS = new Bios
             {
-                Fabricante = record.GetString(4),
-                Versao = record.GetString(5),
-                Data = record.GetString(8)
+                Manufacturer = record.GetString(4),
+                Version = record.GetString(5),
+                Date = record.GetString(8)
             };
         }
 
@@ -231,11 +231,11 @@ namespace Agent.Services
             if (record == null)
                 return;
 
-            info.PlacaMae = new Motherboard
+            info.Motherboard = new Motherboard
             {
-                Fabricante = record.GetString(4),
-                Modelo = record.GetString(5),
-                NumeroSerie = record.GetString(7)
+                Manufacturer = record.GetString(4),
+                Model = record.GetString(5),
+                SerialNumber = record.GetString(7)
             };
         }
 
@@ -277,13 +277,13 @@ namespace Agent.Services
                     clock = maxSpeed;
             }
 
-            info.Processador = new Processor
+            info.Processor = new Processor
             {
-                Fabricante = record.GetString(7),
-                Modelo = record.GetString(5),
-                Nucleos = cores,
+                Manufacturer = record.GetString(7),
+                Model = record.GetString(5),
+                Cores = cores,
                 Threads = threads,
-                ClockMaximoMHz = clock
+                ClockMHz = clock
             };
         }
 
@@ -355,14 +355,14 @@ namespace Agent.Services
 
                 modules.Add(new MemoryModule
                 {
-                    Fabricante = record.GetString(0x17),
-                    CapacidadeGB = Math.Round(
+                    Manufacturer = record.GetString(0x17),
+                    SizeGB = Math.Round(
                         capacityBytes / 1073741824.0,
                         2),
-                    VelocidadeMHz = speed,
-                    Tipo = GetDDRType(memoryType),
+                    SpeedMHz = speed,
+                    Type = GetDDRType(memoryType),
                     PartNumber = record.GetString(0x1A),
-                    NumeroSerie = record.GetString(0x18),
+                    SerialNumber = record.GetString(0x18),
                     Slot = record.GetString(0x10)
                 });
             }
@@ -370,12 +370,12 @@ namespace Agent.Services
             if (modules.Count == 0)
                 return;
 
-            info.Memoria = new MemoryInfo
+            info.Memory = new Memory
             {
                 TotalGB = Math.Round(
-                    modules.Sum(x => x.CapacidadeGB),
+                    modules.Sum(x => x.SizeGB),
                     2),
-                Modulos = modules
+                Modules = modules
             };
         }
 
@@ -395,7 +395,7 @@ namespace Agent.Services
              * ser melhor através de PCI/sysfs.
              */
 
-            var videos = new List<VideoController>();
+            var videos = new List<GPU>();
 
             foreach (var record in records.Where(
                 x => x.Type == 41))
@@ -415,16 +415,16 @@ namespace Agent.Services
                     "vga",
                     StringComparison.OrdinalIgnoreCase))
                 {
-                    videos.Add(new VideoController
+                    videos.Add(new GPU
                     {
-                        Modelo = name,
-                        MemoriaGB = 0
+                        Model = name,
+                        MemoryGB = 0
                     });
                 }
             }
 
             if (videos.Count > 0)
-                info.Video = videos;
+                info.GPU = videos;
         }
 
         // =============================================================
@@ -435,7 +435,7 @@ namespace Agent.Services
             List<DmiRecord> records,
             HardwareInfo info)
         {
-            var adapters = new List<NetworkAdapter>();
+            var adapters = new List<Network>();
 
             foreach (var record in records.Where(
                 x => x.Type == 41))
@@ -455,17 +455,17 @@ namespace Agent.Services
                     "lan",
                     StringComparison.OrdinalIgnoreCase))
                 {
-                    adapters.Add(new NetworkAdapter
+                    adapters.Add(new Network
                     {
-                        Modelo = name,
+                        Model = name,
                         MAC = "N/A",
-                        VelocidadeMbps = 0
+                        SpeedMbps = 0
                     });
                 }
             }
 
             if (adapters.Count > 0)
-                info.Rede = adapters;
+                info.Network = adapters;
         }
 
         // =============================================================
@@ -515,17 +515,17 @@ namespace Agent.Services
                 "VERSION_ID",
                 out var version);
 
-            info.Sistema = new SystemInfo
+            info.EquipmentSystem = new EquipmentSystem
             {
-                Nome = string.IsNullOrWhiteSpace(prettyName)
+                Name = string.IsNullOrWhiteSpace(prettyName)
                     ? "Linux"
                     : prettyName,
 
-                Versao = string.IsNullOrWhiteSpace(version)
+                Version = string.IsNullOrWhiteSpace(version)
                     ? "N/A"
                     : version,
 
-                Arquitetura =
+                Architecture =
                     RuntimeInformation.OSArchitecture.ToString()
             };
         }
@@ -551,11 +551,11 @@ namespace Agent.Services
                 serial == "N/A")
                 return;
 
-            info.Equipamento = new Equipment
+            info.Equipment = new Equipment
             {
-                Fabricante = manufacturer,
-                Modelo = model,
-                NumeroSerie = serial
+                Manufacturer = manufacturer,
+                Model = model,
+                SerialNumber = serial
             };
         }
 
@@ -571,7 +571,7 @@ namespace Agent.Services
             if (uuid == "")
                 return;
 
-            info.Identificacao = new Identification
+            info.Identification = new Identification
             {
                 UUID = uuid
             };
@@ -595,9 +595,9 @@ namespace Agent.Services
 
             info.BIOS = new Bios
             {
-                Fabricante = manufacturer,
-                Versao = version,
-                Data = date
+                Manufacturer = manufacturer,
+                Version = version,
+                Date = date
             };
         }
 
@@ -617,11 +617,11 @@ namespace Agent.Services
                 serial == "N/A")
                 return;
 
-            info.PlacaMae = new Motherboard
+            info.Motherboard = new Motherboard
             {
-                Fabricante = manufacturer,
-                Modelo = model,
-                NumeroSerie = serial
+                Manufacturer = manufacturer,
+                Model = model,
+                SerialNumber = serial
             };
         }
 
@@ -688,13 +688,13 @@ namespace Agent.Services
                 if (cores == 0)
                     cores = threads;
 
-                info.Processador = new Processor
+                info.Processor = new Processor
                 {
-                    Fabricante = manufacturer,
-                    Modelo = model,
-                    Nucleos = cores,
+                    Manufacturer = manufacturer,
+                    Model = model,
+                    Cores = cores,
                     Threads = threads,
-                    ClockMaximoMHz = clock
+                    ClockMHz = clock
                 };
             }
             catch
@@ -734,13 +734,13 @@ namespace Agent.Services
                         return;
                     }
 
-                    info.Memoria = new MemoryInfo
+                    info.Memory = new Memory
                     {
                         TotalGB = Math.Round(
                             kb / 1048576.0,
                             2),
 
-                        Modulos = new List<MemoryModule>()
+                        Modules = new List<MemoryModule>()
                     };
 
                     return;
@@ -811,22 +811,22 @@ namespace Agent.Services
 
                     disks.Add(new Disk
                     {
-                        Modelo = model == "N/A"
+                        Model = model == "N/A"
                             ? device
                             : model,
 
-                        Fabricante = vendor,
+                        Manufacturer = vendor,
 
                         Interface = GetDiskInterface(
                             device),
 
-                        TamanhoGB = Math.Round(
+                        SizeGB = Math.Round(
                             size / 1073741824.0,
                             2),
 
-                        Serial = serial,
+                        SerialNumber = serial,
 
-                        Tipo = rotational == "0"
+                        Type = rotational == "0"
                             ? "SSD"
                             : rotational == "1"
                                 ? "HD"
@@ -845,9 +845,9 @@ namespace Agent.Services
         // FALLBACK: VIDEO /sys
         // =============================================================
 
-        private List<VideoController> CollectVideoFromSys()
+        private List<GPU> CollectVideoFromSys()
         {
-            var videos = new List<VideoController>();
+            var videos = new List<GPU>();
 
             try
             {
@@ -877,12 +877,12 @@ namespace Agent.Services
                             device,
                             "device"));
 
-                    videos.Add(new VideoController
+                    videos.Add(new GPU
                     {
-                        Modelo =
+                        Model =
                             $"{GetGpuVendor(vendor)} ({deviceId})",
 
-                        MemoriaGB = 0
+                        MemoryGB = 0
                     });
                 }
             }
@@ -897,9 +897,9 @@ namespace Agent.Services
         // FALLBACK: NETWORK /sys
         // =============================================================
 
-        private List<NetworkAdapter> CollectNetworkFromSys()
+        private List<Network> CollectNetworkFromSys()
         {
-            var adapters = new List<NetworkAdapter>();
+            var adapters = new List<Network>();
 
             try
             {
@@ -930,11 +930,11 @@ namespace Agent.Services
                             path,
                             "speed"));
 
-                    adapters.Add(new NetworkAdapter
+                    adapters.Add(new Network
                     {
-                        Modelo = name,
+                        Model = name,
                         MAC = mac,
-                        VelocidadeMbps =
+                        SpeedMbps =
                             speed > 0
                                 ? speed
                                 : 0

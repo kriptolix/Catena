@@ -47,7 +47,7 @@
     // Função para buscar usuários da API
     async function fetchUsers(page = 1) {
         try {
-            const response = await fetch(`/usuarios?page=${page}&limit=${itemsPerPage}`);
+            const response = await fetch(`/users?page=${page}&limit=${itemsPerPage}`);
             if (!response.ok) {
                 throw new Error('Erro ao carregar usuários');
             }
@@ -79,7 +79,7 @@
             
             // Determinar o tipo de usuário
             const tipo = user.is_admin ? 'Administrador' : 'Usuário';
-            const tipoClass = user.is_admin ? 'tipo-admin' : 'tipo-usuario';
+            const tipoClass = user.is_admin ? 'tipo-admin' : 'tipo-user';
             
             tr.innerHTML = `
                 <td>${escapeHtml(user.nome_completo)}</td>
@@ -117,7 +117,7 @@
         }
 
         try {
-            const response = await fetch(`/usuarios/${userId}`, {
+            const response = await fetch(`/users/${userId}`, {
                 method: 'DELETE'
             });
 

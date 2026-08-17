@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="detalhes-equipamento">
-    <h2>Detalhes do Equipamento</h2>
+<div id="detalhes-Equipment">
+    <h2>Detalhes do Equipment</h2>
     <div id="loading">Carregando...</div>
     <div id="conteudo" style="display:none;">
         <section>
@@ -10,8 +10,8 @@
             <p><strong>Tombo:</strong> <span id="tombo"></span></p>
             <p><strong>Serial:</strong> <span id="numero-serie"></span></p>
             <p><strong>UUID:</strong> <span id="uuid"></span></p>
-            <p><strong>Fabricante:</strong> <span id="fabricante"></span></p>
-            <p><strong>Modelo:</strong> <span id="modelo"></span></p>
+            <p><strong>manufacturer:</strong> <span id="manufacturer"></span></p>
+            <p><strong>model:</strong> <span id="model"></span></p>
         </section>
         <section>
             <h3>Hardware Atual</h3>
@@ -22,8 +22,8 @@
         </section>
         <section>
             <h3>Patrimônio</h3>
-            <p><strong>Localização:</strong> <span id="localizacao"></span></p>
-            <p><strong>Estado:</strong> <span id="estado"></span></p>
+            <p><strong>Localização:</strong> <span id="location"></span></p>
+            <p><strong>status:</strong> <span id="status"></span></p>
             <p><strong>Garantia:</strong> <span id="garantia"></span></p>
         </section>
         <section>
@@ -39,24 +39,24 @@
 
 <script>
     const tombo = window.location.pathname.split('/').pop();
-    fetch(`/api/v1/equipamentos/${tombo}`)
+    fetch(`/api/v1/Equipments/${tombo}`)
         .then(response => response.json())
         .then(equip => {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('conteudo').style.display = 'block';
 
             document.getElementById('tombo').textContent = equip.tombo;
-            document.getElementById('numero-serie').textContent = equip.numero_serie || '';
+            document.getElementById('numero-serie').textContent = equip.serial_number || '';
             document.getElementById('uuid').textContent = equip.uuid || '';
-            document.getElementById('fabricante').textContent = equip.fabricante?.valor || '';
-            document.getElementById('modelo').textContent = equip.modelo?.valor || '';
-            document.getElementById('localizacao').textContent = equip.localizacao;
-            document.getElementById('estado').textContent = equip.estado;
+            document.getElementById('manufacturer').textContent = equip.manufacturer?.valor || '';
+            document.getElementById('model').textContent = equip.model?.valor || '';
+            document.getElementById('location').textContent = equip.location;
+            document.getElementById('status').textContent = equip.status;
             // Garantia
             let garantia = 'NÃO';
-            if (equip.inicio_garantia && equip.duracao_garantia) {
-                const fim = new Date(equip.inicio_garantia);
-                fim.setMonth(fim.getMonth() + equip.duracao_garantia);
+            if (equip.warranty_start && equip.warranty_period) {
+                const fim = new Date(equip.warranty_start);
+                fim.setMonth(fim.getMonth() + equip.warranty_period);
                 if (fim > new Date()) {
                     garantia = `SIM (até ${fim.toLocaleDateString()})`;
                 }
@@ -64,7 +64,7 @@
             document.getElementById('garantia').textContent = garantia;
 
             // Buscar inventário mais recente
-            fetch(`/api/v1/equipamentos/${tombo}/inventarios`)
+            fetch(`/api/v1/Equipments/${tombo}/inventarios`)
                 .then(res => res.json())
                 .then(inventarios => {
                     if (inventarios.length > 0) {
@@ -77,18 +77,18 @@
                 });
 
             // Histórico
-            fetch(`/api/v1/equipamentos/${tombo}/historico`)
+            fetch(`/api/v1/Equipments/${tombo}/historico`)
                 .then(res => res.json())
                 .then(historico => {
                     const ul = document.getElementById('historico-lista');
                     historico.forEach(item => {
                         const li = document.createElement('li');
-                        li.textContent = `${new Date(item.data).toLocaleString()} - ${item.usuario}: ${item.tipo} (${item.valor_anterior || ''} -> ${item.valor_novo || ''})`;
+                        li.textContent = `${new Date(item.data).toLocaleString()} - ${item.user}: ${item.tipo} (${item.previous_value || ''} -> ${item.next_value || ''})`;
                         ul.appendChild(li);
                     });
                 });
 
-            // Anotações (não temos endpoint específico para listar anotações, vamos pegar da rota de equipamentos? 
+            // Anotações (não temos endpoint específico para listar anotações, vamos pegar da rota de Equipments? 
             // Melhor: adicionar uma rota para anotações. Por enquanto, podemos pular.
         });
 </script>

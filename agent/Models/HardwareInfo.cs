@@ -2,20 +2,20 @@ namespace Agent.Models
 {
     public class HardwareInfo
     {
-        public Identification? Identificacao { get; set; }
-        public Equipment? Equipamento { get; set; }
+        public Identification? Identification { get; set; }
+        public Equipment? Equipment { get; set; }
         public Bios? BIOS { get; set; }
-        public Motherboard? PlacaMae { get; set; }
-        public SystemInfo? Sistema { get; set; }
-        public Processor? Processador { get; set; }
-        public MemoryInfo? Memoria { get; set; }
-        public List<Disk>? Discos { get; set; }
-        public List<VideoController>? Video { get; set; }
-        public List<NetworkAdapter>? Rede { get; set; }
-        public string? Tombo { get; set; }
-        public string Localizacao { get; set; } = "";       
-        public string? Observacoes { get; set; }
-        public string? DataInventario { get; set; }
+        public Motherboard? Motherboard { get; set; }
+        public EquipmentSystem? EquipmentSystem { get; set; }
+        public Processor? Processor { get; set; }
+        public Memory? Memory { get; set; }
+        public List<Disk>? Disk { get; set; }
+        public List<GPU>? GPU { get; set; }
+        public List<Network>? Network { get; set; }
+        public string? AssetTag { get; set; }
+        public string Location { get; set; } = "";       
+        public string? Annotation { get; set; }
+        public string? Date { get; set; }
     }
 
     public class Identification
@@ -26,78 +26,78 @@ namespace Agent.Models
 
     public class Equipment
     {
-        public string? Fabricante { get; set; }
-        public string? Modelo { get; set; }
-        public string? NumeroSerie { get; set; }
+        public string? Manufacturer { get; set; }
+        public string? Model { get; set; }
+        public string? SerialNumber { get; set; }
     }
 
     public class Bios
     {
-        public string? Fabricante { get; set; }
-        public string? Versao { get; set; }
-        public string? Data { get; set; }
+        public string? Manufacturer { get; set; }
+        public string? Version { get; set; }
+        public string? Date { get; set; }
     }
 
     public class Motherboard
     {
-        public string? Fabricante { get; set; }
-        public string? Modelo { get; set; }
-        public string? NumeroSerie { get; set; }
+        public string? Manufacturer { get; set; }
+        public string? Model { get; set; }
+        public string? SerialNumber { get; set; }
     }
 
-    public class SystemInfo
+    public class EquipmentSystem
     {
-        public string? Nome { get; set; }
-        public string? Versao { get; set; }
-        public string? Arquitetura { get; set; }        
+        public string? Name { get; set; }
+        public string? Version { get; set; }
+        public string? Architecture { get; set; }        
     }
 
     public class Processor
     {
-        public string? Modelo { get; set; }
-        public string? Fabricante { get; set; }
-        public int Nucleos { get; set; }
+        public string? Model { get; set; }
+        public string? Manufacturer { get; set; }
+        public int Cores { get; set; }
         public int Threads { get; set; }
-        public int ClockMaximoMHz { get; set; }
+        public int ClockMHz { get; set; }
     }
 
-    public class MemoryInfo
+    public class Memory
     {
         public double TotalGB { get; set; }
-        public List<MemoryModule>? Modulos { get; set; }
+        public List<MemoryModule>? Modules { get; set; }
     }
 
     public class MemoryModule
     {
-        public string? Fabricante { get; set; }
-        public double CapacidadeGB { get; set; }
-        public int VelocidadeMHz { get; set; }
-        public string? Tipo { get; set; }
+        public string? Manufacturer { get; set; }
+        public double SizeGB { get; set; }
+        public int SpeedMHz { get; set; }
+        public string? Type { get; set; }
         public string? PartNumber { get; set; }
-        public string? NumeroSerie { get; set; }
+        public string? SerialNumber { get; set; }
         public string? Slot { get; set; }
     }
 
     public class Disk
     {
-        public string? Modelo { get; set; }
-        public string? Fabricante { get; set; }
+        public string? Model { get; set; }
+        public string? Manufacturer { get; set; }
         public string? Interface { get; set; }
-        public double TamanhoGB { get; set; }
-        public string? Serial { get; set; }
-        public string? Tipo { get; set; }
+        public double SizeGB { get; set; }
+        public string? SerialNumber { get; set; }
+        public string? Type { get; set; }
     }
 
-    public class VideoController
+    public class GPU
     {
-        public string? Modelo { get; set; }
-        public double MemoriaGB { get; set; }
+        public string? Model { get; set; }
+        public double MemoryGB { get; set; }
     }
 
-    public class NetworkAdapter
+    public class Network
     {
-        public string? Modelo { get; set; }
+        public string? Model { get; set; }
         public string? MAC { get; set; }
-        public long VelocidadeMbps { get; set; }
+        public long SpeedMbps { get; set; }
     }
 }

@@ -20,8 +20,8 @@ namespace Agent.Models
         [JsonPropertyName("success")]
         public bool Success { get; set; }
 
-        [JsonPropertyName("tombo")]
-        public string? Tombo { get; set; }
+        [JsonPropertyName("assetTag")]
+        public string? AssetTag { get; set; }
 
         [JsonPropertyName("message")]
         public string? Message { get; set; }
@@ -29,8 +29,8 @@ namespace Agent.Models
         [JsonPropertyName("id")]
         public int Id { get; set; }
 
-        [JsonPropertyName("dataCriacao")]
-        public DateTime DataCriacao { get; set; }
+        [JsonPropertyName("creationDate")]
+        public DateTime CreationDate { get; set; }
     }
 
     public class LocationsResponse

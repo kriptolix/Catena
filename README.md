@@ -16,16 +16,16 @@ Catena/
     ├── routes/
     │   ├── pages.py
     │   └── api/
-    │       ├── equipamentos.py
-    │       ├── usuarios.py
+    │       ├── Equipments.py
+    │       ├── users.py
     │       └── auth.py
     │
     ├── models/
-    │   └── usuario.py
+    │   └── user.py
     │
     ├── services/
     │   ├── auth.py
-    │   └── equipamentos.py
+    │   └── Equipments.py
     │
     ├── templates/
     │   ├── index.html

@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Equipamentos</h2>
+<h2>Equipments</h2>
 
 <div class="filtros">
     <input type="text" id="filtro-tombo" placeholder="Tombo">
-    <input type="text" id="filtro-fabricante" placeholder="Fabricante">
-    <input type="text" id="filtro-modelo" placeholder="Modelo">
-    <input type="text" id="filtro-localizacao" placeholder="Localização">
-    <select id="filtro-estado">
+    <input type="text" id="filtro-manufacturer" placeholder="manufacturer">
+    <input type="text" id="filtro-model" placeholder="model">
+    <input type="text" id="filtro-location" placeholder="Localização">
+    <select id="filtro-status">
         <option value="">Todos</option>
         <option value="funcional">Funcional</option>
         <option value="defeituoso">Defeituoso</option>
@@ -17,14 +17,14 @@
     <button id="btn-filtrar">Filtrar</button>
 </div>
 
-<div id="tabela-equipamentos">
+<div id="tabela-Equipments">
     <table>
         <thead>
             <tr>
                 <th>Tombo</th>
-                <th>Modelo</th>
+                <th>model</th>
                 <th>Localização</th>
-                <th>Estado</th>
+                <th>status</th>
                 <th>Garantia</th>
                 <th>Último Inventário</th>
                 <th>Ações</th>
@@ -49,13 +49,13 @@
     let paginaAtual = 0;
     const limite = 10;
 
-    function carregarEquipamentos(filtros = {}) {
+    function carregarEquipments(filtros = {}) {
         const params = new URLSearchParams({
             skip: paginaAtual * limite,
             limit: limite,
             ...filtros
         });
-        fetch(`/api/v1/equipamentos?${params}`)
+        fetch(`/api/v1/Equipments?${params}`)
             .then(response => response.json())
             .then(data => {
                 const tbody = document.getElementById('corpo-tabela');
@@ -64,12 +64,12 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${equip.tombo}</td>
-                        <td>${equip.modelo?.valor || ''}</td>
-                        <td>${equip.localizacao}</td>
-                        <td>${equip.estado}</td>
+                        <td>${equip.model?.valor || ''}</td>
+                        <td>${equip.location}</td>
+                        <td>${equip.status}</td>
                         <td>${calcularGarantia(equip)}</td>
                         <td>${equip.atualizado_em ? new Date(equip.atualizado_em).toLocaleDateString() : ''}</td>
-                        <td><a href="/equipamentos/${equip.tombo}">Detalhes</a></td>
+                        <td><a href="/Equipments/${equip.tombo}">Detalhes</a></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -78,9 +78,9 @@
     }
 
     function calcularGarantia(equip) {
-        if (!equip.inicio_garantia || !equip.duracao_garantia) return 'NÃO';
-        const fim = new Date(equip.inicio_garantia);
-        fim.setMonth(fim.getMonth() + equip.duracao_garantia);
+        if (!equip.warranty_start || !equip.warranty_period) return 'NÃO';
+        const fim = new Date(equip.warranty_start);
+        fim.setMonth(fim.getMonth() + equip.warranty_period);
         const hoje = new Date();
         if (fim > hoje) {
             return `SIM (até ${fim.toLocaleDateString()})`;
@@ -93,28 +93,28 @@
     document.getElementById('btn-filtrar').addEventListener('click', () => {
         paginaAtual = 0;
         const filtros = {
-            tombo: document.getElementById('filtro-tombo').value,
-            fabricante: document.getElementById('filtro-fabricante').value,
-            modelo: document.getElementById('filtro-modelo').value,
-            localizacao: document.getElementById('filtro-localizacao').value,
-            estado: document.getElementById('filtro-estado').value
+            asset_number document.getElementById('filtro-tombo').value,
+            manufacturer: document.getElementById('filtro-manufacturer').value,
+            model: document.getElementById('filtro-model').value,
+            location: document.getElementById('filtro-location').value,
+            status: document.getElementById('filtro-status').value
         };
-        carregarEquipamentos(filtros);
+        carregarEquipments(filtros);
     });
 
     // Paginação
     document.getElementById('pagina-anterior').addEventListener('click', () => {
         if (paginaAtual > 0) {
             paginaAtual--;
-            carregarEquipamentos();
+            carregarEquipments();
         }
     });
     document.getElementById('proxima-pagina').addEventListener('click', () => {
         paginaAtual++;
-        carregarEquipamentos();
+        carregarEquipments();
     });
 
     // Carregar inicial
-    carregarEquipamentos();
+    carregarEquipments();
 </script>
 {% endblock %}

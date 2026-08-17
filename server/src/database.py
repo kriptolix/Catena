@@ -37,5 +37,6 @@ def get_db_connection():
 
 def init_db():
     """Inicializa o banco de dados com todas as tabelas"""
-    from sql import inicializar_banco
-    return inicializar_banco()
+    from sql.sql import initialize_database
+    return initialize_database()
+  

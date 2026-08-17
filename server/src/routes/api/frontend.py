@@ -3,130 +3,130 @@ import sqlite3
 from typing import Optional, List
 from database import get_db_connection
 from schemas import (
-    Equipamento, EquipamentoCreate, EquipamentoUpdate, 
-    DefeitoCreate, Defeito, AnotacaoCreate, Anotacao, 
+    Equipment, EquipmentCreate, EquipmentUpdate, 
+    DefeitoCreate, Defeito, AnnotationCreate, Annotation, 
     InventarioHardware, Historico
 )
 from crud import (
-    get_equipamento, get_equipamentos, create_equipamento, 
-    update_equipamento, delete_equipamento,
-    create_defeito, resolver_defeito, create_anotacao
+    get_Equipment, get_Equipments, create_Equipment, 
+    update_Equipment, delete_Equipment,
+    create_defeito, resolver_defeito, create_annotation
 )
 from services.auth import get_current_active_user, get_current_admin_user
-from enums import EstadoEquipamento
+from enums import statusEquipment
 from typing import Dict, Any
 
 # Type alias para usuário
 UserDict = Dict[str, Any]
 
-router = APIRouter(prefix="/api/v1/equipamentos", tags=["equipamentos"])
+router = APIRouter(prefix="/api/v1/Equipments", tags=["Equipments"])
 
-@router.get("/", response_model=List[Equipamento])
-async def list_equipamentos(
+@router.get("/", response_model=List[Equipment])
+async def list_Equipments(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    tombo: Optional[str] = None,
-    fabricante: Optional[str] = None,
-    modelo: Optional[str] = None,
-    localizacao: Optional[str] = None,
-    estado: Optional[EstadoEquipamento] = None,
+    asset_number Optional[str] = None,
+    manufacturer: Optional[str] = None,
+    model: Optional[str] = None,
+    location: Optional[str] = None,
+    status: Optional[statusEquipment] = None,
     garantia: Optional[str] = None,  # 'SIM' ou 'NAO'
     defeito: Optional[bool] = False,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
     """
-    Lista equipamentos com filtros opcionais.
+    Lista Equipments com filtros opcionais.
     Qualquer usuário autenticado pode visualizar.
     """
     filters = {}
-    if tombo:
+    if asset_number
         filters['tombo'] = tombo
-    if fabricante:
-        filters['fabricante'] = fabricante
-    if modelo:
-        filters['modelo'] = modelo
-    if localizacao:
-        filters['localizacao'] = localizacao
-    if estado:
-        filters['estado'] = estado.value if hasattr(estado, 'value') else estado
+    if manufacturer:
+        filters['manufacturer'] = manufacturer
+    if model:
+        filters['model'] = model
+    if location:
+        filters['location'] = location
+    if status:
+        filters['status'] = status.value if hasattr(status, 'value') else status
     if garantia:
         filters['garantia'] = garantia
     if defeito:
         filters['defeito'] = defeito
     
-    equipamentos = get_equipamentos(db, skip, limit, filters)
-    return equipamentos
+    Equipments = get_Equipments(db, skip, limit, filters)
+    return Equipments
 
 
-@router.get("/{tombo}", response_model=Equipamento)
-async def get_equipamento_detail(
-    tombo: str, 
+@router.get("/{tombo}", response_model=Equipment)
+async def get_Equipment_detail(
+    asset_number str, 
     db: sqlite3.Connection = Depends(get_db_connection), 
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
-    """Obtém detalhes de um equipamento específico"""
-    equip = get_equipamento(db, tombo)
+    """Obtém detalhes de um Equipment específico"""
+    equip = get_Equipment(db, tombo)
     if not equip:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
     return equip
 
 
-@router.post("/", response_model=Equipamento)
-async def create_new_equipamento(
-    equipamento: EquipamentoCreate,
+@router.post("/", response_model=Equipment)
+async def create_new_Equipment(
+    Equipment: EquipmentCreate,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
-    """Cria um novo equipamento"""
+    """Cria um novo Equipment"""
     try:
-        return create_equipamento(db, equipamento, current_user['username'])
+        return create_Equipment(db, Equipment, current_user['username'])
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{tombo}", response_model=Equipamento)
-async def update_existing_equipamento(
-    tombo: str,
-    equipamento_update: EquipamentoUpdate,
+@router.put("/{tombo}", response_model=Equipment)
+async def update_existing_Equipment(
+    asset_number str,
+    Equipment_update: EquipmentUpdate,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
-    """Atualiza um equipamento existente"""
-    equip = update_equipamento(db, tombo, equipamento_update, current_user['username'])
+    """Atualiza um Equipment existente"""
+    equip = update_Equipment(db, tombo, Equipment_update, current_user['username'])
     if not equip:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
     return equip
 
 
 @router.delete("/{tombo}")
-async def delete_existing_equipamento(
-    tombo: str,
+async def delete_existing_Equipment(
+    asset_number str,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_admin_user)  # apenas admin
 ):
-    """Remove um equipamento (apenas administradores)"""
-    success = delete_equipamento(db, tombo, current_user['username'])
+    """Remove um Equipment (apenas administradores)"""
+    success = delete_Equipment(db, tombo, current_user['username'])
     if not success:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
-    return {"detail": "Equipamento removido"}
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
+    return {"detail": "Equipment removido"}
 
 
 # --- Defeitos ---
 @router.post("/{tombo}/defeitos", response_model=Defeito)
 async def add_defeito(
-    tombo: str,
+    asset_number str,
     defeito: DefeitoCreate,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
-    """Adiciona um defeito a um equipamento"""
-    equip = get_equipamento(db, tombo)
+    """Adiciona um defeito a um Equipment"""
+    equip = get_Equipment(db, tombo)
     if not equip:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
     
-    # Atribuir o equipamento_id ao defeito
-    defeito.equipamento_id = equip['id']
+    # Atribuir o equipment_id ao defeito
+    defeito.equipment_id = equip['id']
     return create_defeito(db, defeito, current_user['username'])
 
 
@@ -144,39 +144,39 @@ async def resolve_defeito(
 
 
 # --- Anotações ---
-@router.post("/{tombo}/anotacoes", response_model=Anotacao)
-async def add_anotacao(
-    tombo: str,
-    anotacao: AnotacaoCreate,
+@router.post("/{tombo}/anotacoes", response_model=Annotation)
+async def add_annotation(
+    asset_number str,
+    annotation: AnnotationCreate,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: UserDict = Depends(get_current_active_user)
 ):
-    """Adiciona uma anotação a um equipamento"""
-    equip = get_equipamento(db, tombo)
+    """Adiciona uma anotação a um Equipment"""
+    equip = get_Equipment(db, tombo)
     if not equip:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
     
-    anotacao.equipamento_id = equip['id']
-    anotacao.usuario = current_user['username']
-    return create_anotacao(db, anotacao)
+    annotation.equipment_id = equip['id']
+    annotation.user = current_user['username']
+    return create_annotation(db, annotation)
 
 
 # --- Histórico ---
 @router.get("/{tombo}/historico", response_model=List[Historico])
 async def get_historico(
-    tombo: str,
+    asset_number str,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
-    """Obtém o histórico de alterações de um equipamento"""
-    equip = get_equipamento(db, tombo)
+    """Obtém o histórico de alterações de um Equipment"""
+    equip = get_Equipment(db, tombo)
     if not equip:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
     
     cursor = db.execute(
         """
         SELECT * FROM historico
-        WHERE equipamento_id = ?
+        WHERE equipment_id = ?
         ORDER BY data_hora DESC
         """,
         (equip['id'],)
@@ -188,20 +188,20 @@ async def get_historico(
 # --- Inventários ---
 @router.get("/{tombo}/inventarios", response_model=List[InventarioHardware])
 async def get_inventarios(
-    tombo: str,
+    asset_number str,
     db: sqlite3.Connection = Depends(get_db_connection),
     current_user: Optional[UserDict] = Depends(get_current_active_user)
 ):
-    """Obtém o histórico de inventários de hardware de um equipamento"""
-    equip = get_equipamento(db, tombo)
+    """Obtém o histórico de inventários de hardware de um Equipment"""
+    equip = get_Equipment(db, tombo)
     if not equip:
-        raise HTTPException(status_code=404, detail="Equipamento não encontrado")
+        raise HTTPException(status_code=404, detail="Equipment não encontrado")
     
     cursor = db.execute(
         """
         SELECT * FROM inventario_hardware
-        WHERE equipamento_id = ?
-        ORDER BY data_coleta DESC
+        WHERE equipment_id = ?
+        ORDER BY collection_date DESC
         """,
         (equip['id'],)
     )
@@ -222,11 +222,11 @@ frontend_router = APIRouter(tags=["frontend"])
 async def index(request: Request):
     return templates.TemplateResponse(request, "index.html", {})
 
-@frontend_router.get("/equipamentos/{tombo}", response_class=HTMLResponse)
-async def equipamento_detail(request: Request, tombo: str):
+@frontend_router.get("/Equipments/{tombo}", response_class=HTMLResponse)
+async def Equipment_detail(request: Request, asset_number str):
     return templates.TemplateResponse(
         request,
-        "equipamento.html", 
+        "Equipment.html", 
         {"tombo": tombo}
     )
 
@@ -235,9 +235,9 @@ async def login_page(request: Request):
     return templates.TemplateResponse(request, "login.html", {})
 
 @frontend_router.get("/adicionar", response_class=HTMLResponse)
-async def adicionar_equipamento(request: Request):
+async def adicionar_Equipment(request: Request):
     return templates.TemplateResponse(
         request,
-        "adicionar_equipamento.html", 
+        "adicionar_Equipment.html", 
         {}
     )

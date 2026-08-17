@@ -22,19 +22,19 @@ async def login_page(request: Request):
         {}
     )
 
-@router.get("/equipamentos/{tombo}", response_class=HTMLResponse)
-async def equipamento_detail(request: Request, tombo: str):
+@router.get("/equipments/{tag}", response_class=HTMLResponse)
+async def Equipment_detail(request: Request, asset_tag: str):
     return templates.TemplateResponse(
         request,
-        "equipamento.html", 
-        {"tombo": tombo}
+        "Equipment.html", 
+        {"tag": asset_tag}
     )
 
 
 @router.get("/adicionar", response_class=HTMLResponse)
-async def adicionar_equipamento(request: Request):
+async def adicionar_Equipment(request: Request):
     return templates.TemplateResponse(
         request,
-        "adicionar_equipamento.html", 
+        "adicionar_Equipment.html", 
         {}
     )

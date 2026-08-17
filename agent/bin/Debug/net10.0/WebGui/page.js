@@ -9,7 +9,7 @@ let currentInventory = null;
             btn.disabled = true;
             loading.classList.remove('hidden');
             status.className = 'status info';
-            status.textContent = 'Analisando equipamento...';
+            status.textContent = 'Analisando Equipment...';
 
             try {
                 const response = await fetch('/api/analyze', {
@@ -20,14 +20,14 @@ let currentInventory = null;
                 if (data.success) {
                     currentInventory = data.hardware;
                     document.getElementById('hardwareInfo').style.display = 'block';
-                    document.getElementById('fabricante').textContent = data.hardware.equipamento.fabricante || '-';
-                    document.getElementById('modelo').textContent = data.hardware.equipamento.modelo || '-';
-                    document.getElementById('serial').textContent = data.hardware.equipamento.serial || '-';
-                    document.getElementById('cpu').textContent = data.hardware.cpu.modelo || '-';
-                    document.getElementById('memoria').textContent = data.hardware.memoria.totalGB + ' GB (' + data.hardware.memoria.modulos + ' módulos)';
-                    document.getElementById('armazenamento').textContent = data.hardware.discos.map(d => d.tipo + ' ' + d.tamanhoGB + 'GB').join(', ');
-                    document.getElementById('sistema').textContent = data.hardware.sistema || '-';
-                    document.getElementById('arquitetura').textContent = data.hardware.arquitetura || '-';
+                    document.getElementById('manufacturer').textContent = data.hardware.equipment.manufacturer || '-';
+                    document.getElementById('model').textContent = data.hardware.equipment.model || '-';
+                    document.getElementById('serial').textContent = data.hardware.equipment.serial || '-';
+                    document.getElementById('cpu').textContent = data.hardware.processor.model || '-';
+                    document.getElementById('memory').textContent = data.hardware.memory.totalGB + ' GB (' + data.hardware.memory.modules + ' modules)';
+                    document.getElementById('storage').textContent = data.hardware.disk.map(d => d.type + ' ' + d.sizeGB + 'GB').join(', ');
+                    document.getElementById('system').textContent = data.hardware.system || '-';
+                    document.getElementById('architecture').textContent = data.hardware.architecture || '-';
 
                     status.className = 'status success';
                     status.textContent = '✅ Análise concluída com sucesso!';
@@ -89,9 +89,9 @@ let currentInventory = null;
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        tombo: document.getElementById('tombo').value,
-                        localizacao: document.getElementById('localizacao').value,
-                        observacoes: document.getElementById('observacao').value
+                        asset_number: document.getElementById('assetTag').value,
+                        location: document.getElementById('location').value,
+                        observacoes: document.getElementById('annotation').value
                     })
                 });
                 const data = await response.json();
@@ -121,8 +121,8 @@ let currentInventory = null;
                     body: JSON.stringify({
                         servidor: document.getElementById('serverAddress').value.trim(),
                         porta: parseInt(document.getElementById('serverPort').value) || 54321,
-                        tombo: document.getElementById('tombo').value,
-                        localizacao: document.getElementById('localizacao').value,
+                        asset_number: document.getElementById('tombo').value,
+                        location: document.getElementById('location').value,
                         observacoes: document.getElementById('observacao').value
                     })
                 });
@@ -130,7 +130,7 @@ let currentInventory = null;
 
                 if (data.success) {
                     status.className = 'status success';
-                    status.textContent = '✅ Enviado! Tombo: ' + data.tombo + ' - Data: ' + new Date().toLocaleString();
+                    status.textContent = '✅ Enviado! Tombo: ' + data.tombo + ' - date: ' + new Date().toLocaleString();
                 } else {
                     status.className = 'status error';
                     status.textContent = '❌ ' + (data.message || data.error || 'Falha no envio');
@@ -145,20 +145,20 @@ let currentInventory = null;
 
         function updateSendButton() {
             const btn = document.getElementById('btnSend');
-            const localizacao = document.getElementById('localizacao').value.trim();
-            btn.disabled = !(currentInventory && serverConnected && localizacao);
+            const location = document.getElementById('location').value.trim();
+            btn.disabled = !(currentInventory && serverConnected && location);
         }
-
-        document.getElementById('localizacao').addEventListener('input', updateSendButton);
-        document.getElementById('tombo').addEventListener('input', updateSendButton);
-        document.getElementById('observacao').addEventListener('input', updateSendButton);
+        
+        document.getElementById('assetTag').addEventListener('input', updateSendButton);
+        document.getElementById('annotation').addEventListener('input', updateSendButton);
+        document.getElementById('location').addEventListener('input', updateSendButton);
 
         async function checkStatus() {
             try {
                 const response = await fetch('/api/status');
                 const data = await response.json();
                 if (data.status === 'analisado') {
-                    // Recuperar estado se possível
+                    // Recuperar status se possível
                 }
             } catch (e) {
                 // Ignorar

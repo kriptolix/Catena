@@ -151,7 +151,7 @@ namespace Agent.Services
             var status = new
             {
                 status = _currentInventory != null ? "analisado" : "aguardando",
-                data = _currentInventory != null ? _currentInventory.DataInventario : null
+                data = _currentInventory != null ? _currentInventory.Date : null
             };
             await SendJsonResponse(response, status);
         }
@@ -168,30 +168,30 @@ namespace Agent.Services
                     message = "Análise concluída com sucesso",
                     hardware = new
                     {
-                        equipamento = new
+                        equipment = new
                         {
-                            fabricante = _currentInventory.Equipamento?.Fabricante,
-                            modelo = _currentInventory.Equipamento?.Modelo,
-                            serial = _currentInventory.Equipamento?.NumeroSerie
+                            manufacturer = _currentInventory.Equipment?.Manufacturer,
+                            model = _currentInventory.Equipment?.Model,
+                            serial = _currentInventory.Equipment?.SerialNumber
                         },
-                        cpu = new
+                        processor = new
                         {
-                            modelo = _currentInventory.Processador?.Modelo,
-                            nucleos = _currentInventory.Processador?.Nucleos,
-                            threads = _currentInventory.Processador?.Threads
+                            model = _currentInventory.Processor?.Model,
+                            cores = _currentInventory.Processor?.Cores,
+                            threads = _currentInventory.Processor?.Threads
                         },
-                        memoria = new
+                        memory = new
                         {
-                            totalGB = _currentInventory.Memoria?.TotalGB,
-                            modulos = _currentInventory.Memoria?.Modulos?.Count
+                            totalGB = _currentInventory.Memory?.TotalGB,
+                            modules = _currentInventory.Memory?.Modules?.Count
                         },
-                        discos = _currentInventory.Discos?.Select(d => new
+                        disk = _currentInventory.Disk?.Select(d => new
                         {
-                            tipo = d.Tipo,
-                            tamanhoGB = d.TamanhoGB
+                            type = d.Type,
+                            sizeGB = d.SizeGB
                         }).ToList(),
-                        sistema = _currentInventory.Sistema?.Nome,
-                        arquitetura = _currentInventory.Sistema?.Arquitetura
+                        system = _currentInventory.EquipmentSystem?.Name,
+                        architecture = _currentInventory.EquipmentSystem?.Architecture
                     }
                 });
             }
@@ -215,7 +215,7 @@ namespace Agent.Services
                     await SendJsonResponse(response, new
                     {
                         success = false,
-                        error = "Analise o equipamento primeiro"
+                        error = "Analise o Equipment primeiro"
                     }, 400);
                     return;
                 }
@@ -225,9 +225,9 @@ namespace Agent.Services
 
                 if (patrimonial != null)
                 {
-                    _currentInventory.Localizacao = patrimonial.Localizacao;
-                    _currentInventory.Tombo = patrimonial.Tombo ?? "";
-                    _currentInventory.Observacoes = patrimonial.Observacoes ?? "";
+                    _currentInventory.Location = patrimonial.Location;
+                    _currentInventory.AssetTag = patrimonial.AssetTag ?? "";
+                    _currentInventory.Annotation = patrimonial.Annotation ?? "";
                 }
 
                 _fileService.SaveInventoryLocally(_currentInventory);
@@ -258,7 +258,7 @@ namespace Agent.Services
                     await SendJsonResponse(response, new
                     {
                         success = false,
-                        error = "Analise o equipamento primeiro"
+                        error = "Analise o Equipment primeiro"
                     }, 400);
                     return;
                 }
@@ -266,7 +266,7 @@ namespace Agent.Services
                 var body = await GetRequestBody(request);
                 var sendData = JsonSerializer.Deserialize<SendData>(body);
 
-                if (sendData == null || string.IsNullOrEmpty(sendData.Servidor))
+                if (sendData == null || string.IsNullOrEmpty(sendData.Server))
                 {
                     await SendJsonResponse(response, new
                     {
@@ -276,7 +276,7 @@ namespace Agent.Services
                     return;
                 }
 
-                if (string.IsNullOrEmpty(sendData.Localizacao) || sendData.Localizacao == "Outro")
+                if (string.IsNullOrEmpty(sendData.Location) || sendData.Location == "Outro")
                 {
                     await SendJsonResponse(response, new
                     {
@@ -286,13 +286,13 @@ namespace Agent.Services
                     return;
                 }
 
-                _currentInventory.Localizacao = sendData.Localizacao;
-                _currentInventory.Tombo = sendData.Tombo ?? "";
-                _currentInventory.Observacoes = sendData.Observacoes ?? "";
+                _currentInventory.Location = sendData.Location;
+                _currentInventory.AssetTag = sendData.AssetTag ?? "";
+                _currentInventory.Annotation = sendData.Annotation ?? "";
 
                 var (success, tombo, error) = await _networkService.SendInventory(
-                    sendData.Servidor,
-                    sendData.Porta,
+                    sendData.Server,
+                    sendData.Port,
                     _currentInventory
                 );
 
@@ -432,18 +432,18 @@ namespace Agent.Services
 
         private class PatrimonialData
         {
-            public string Tombo { get; set; }
-            public string Localizacao { get; set; }
-            public string Observacoes { get; set; }
+            public string AssetTag { get; set; }
+            public string Location { get; set; }
+            public string Annotation { get; set; }
         }
 
         private class SendData
         {
-            public string Servidor { get; set; }
-            public int Porta { get; set; }
-            public string Tombo { get; set; }
-            public string Localizacao { get; set; }
-            public string Observacoes { get; set; }
+            public string Server { get; set; }
+            public int Port { get; set; }
+            public string AssetTag { get; set; }
+            public string Location { get; set; }
+            public string Annotation { get; set; }
         }
 
         private class ServerTestData

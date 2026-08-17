@@ -16,13 +16,13 @@ namespace Agent.Services
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        info.Equipamento = new Equipment
+                        info.Equipment = new Equipment
                         {
-                            Fabricante = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
-                            Modelo = obj["Model"]?.ToString()?.Trim() ?? "N/A"
+                            Manufacturer = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
+                            Model = obj["Model"]?.ToString()?.Trim() ?? "N/A"
                         };
 
-                        info.Identificacao = new Identification
+                        info.Identification = new Identification
                         {
                             
 UUID = "N/A" // Placeholder, will be filled later
@@ -38,14 +38,14 @@ UUID = "N/A" // Placeholder, will be filled later
                     {
                         info.BIOS = new Bios
                         {
-                            Fabricante = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
-                            Versao = obj["SMBIOSBIOSVersion"]?.ToString()?.Trim() ?? "N/A",
-                            Data = obj["ReleaseDate"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd")
+                            Manufacturer = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
+                            Version = obj["SMBIOSBIOSVersion"]?.ToString()?.Trim() ?? "N/A",
+                            Date = obj["ReleaseDate"]?.ToString() ?? DateTime.Now.ToString("yyyy-MM-dd")
                         };
 
-                        if (info.Equipamento != null && string.IsNullOrEmpty(info.Equipamento.NumeroSerie))
+                        if (info.Equipment != null && string.IsNullOrEmpty(info.Equipment.SerialNumber))
                         {
-                            info.Equipamento.NumeroSerie = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A";
+                            info.Equipment.SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A";
                         }
                         break;
                     }
@@ -56,11 +56,11 @@ UUID = "N/A" // Placeholder, will be filled later
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        info.PlacaMae = new Motherboard
+                        info.Motherboard = new Motherboard
                         {
-                            Fabricante = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
-                            Modelo = obj["Product"]?.ToString()?.Trim() ?? "N/A",
-                            NumeroSerie = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A"
+                            Manufacturer = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
+                            Model = obj["Product"]?.ToString()?.Trim() ?? "N/A",
+                            SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A"
                         };
                         break;
                     }
@@ -71,9 +71,9 @@ UUID = "N/A" // Placeholder, will be filled later
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        if (info.Identificacao != null)
+                        if (info.Identification != null)
                         {
-                            info.Identificacao.UUID = obj["UUID"]?.ToString()?.Trim() ?? "N/A";
+                            info.Identification.UUID = obj["UUID"]?.ToString()?.Trim() ?? "N/A";
                         }
                         break;
                     }
@@ -84,11 +84,11 @@ UUID = "N/A" // Placeholder, will be filled later
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        info.Sistema = new SystemInfo
+                        info.EquipmentSystem = new EquipmentSystem
                         {
-                            Nome = obj["Caption"]?.ToString()?.Trim() ?? "N/A",
-                            Versao = obj["Version"]?.ToString()?.Trim() ?? "N/A",
-                            Arquitetura = obj["OSArchitecture"]?.ToString()?.Trim() ?? "N/A"
+                            Name = obj["Caption"]?.ToString()?.Trim() ?? "N/A",
+                            Version = obj["Version"]?.ToString()?.Trim() ?? "N/A",
+                            Architecture = obj["OSArchitecture"]?.ToString()?.Trim() ?? "N/A"
                         };
                         break;
                     }
@@ -99,13 +99,13 @@ UUID = "N/A" // Placeholder, will be filled later
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        info.Processador = new Processor
+                        info.Processor = new Processor
                         {
-                            Fabricante = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
-                            Modelo = obj["Name"]?.ToString()?.Trim() ?? "N/A",
-                            Nucleos = ConvertToInt32(obj["NumberOfCores"]),
+                            Manufacturer = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
+                            Model = obj["Name"]?.ToString()?.Trim() ?? "N/A",
+                            Cores = ConvertToInt32(obj["NumberOfCores"]),
                             Threads = ConvertToInt32(obj["NumberOfLogicalProcessors"]),
-                            ClockMaximoMHz = ConvertToInt32(obj["MaxClockSpeed"])
+                            ClockMHz = ConvertToInt32(obj["MaxClockSpeed"])
                         };
                         break;
                     }
@@ -124,21 +124,21 @@ UUID = "N/A" // Placeholder, will be filled later
 
                         memoryModules.Add(new MemoryModule
                         {
-                            Fabricante = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
-                            CapacidadeGB = Math.Round(capacity / 1073741824, 2),
-                            VelocidadeMHz = ConvertToInt32(obj["Speed"]),
-                            Tipo = GetDDRType(ConvertToInt32(obj["SMBIOSMemoryType"])),
+                            Manufacturer = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
+                            SizeGB = Math.Round(capacity / 1073741824, 2),
+                            SpeedMHz = ConvertToInt32(obj["Speed"]),
+                            Type = GetDDRType(ConvertToInt32(obj["SMBIOSMemoryType"])),
                             PartNumber = obj["PartNumber"]?.ToString()?.Trim() ?? "N/A",
-                            NumeroSerie = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A",
+                            SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A",
                             Slot = obj["DeviceLocator"]?.ToString()?.Trim() ?? "N/A"
                         });
                     }
                 }
 
-                info.Memoria = new MemoryInfo
+                info.Memory = new Memory
                 {
                     TotalGB = Math.Round(totalRAM / 1073741824, 2),
-                    Modulos = memoryModules
+                    Modules = memoryModules
                 };
 
                 // Disks
@@ -147,60 +147,60 @@ UUID = "N/A" // Placeholder, will be filled later
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
-                        var model = obj["Model"]?.ToString() ?? "";
+                        var Model = obj["Model"]?.ToString() ?? "";
                         var tipo = "HD";
-                        if (model.Contains("NVMe", StringComparison.OrdinalIgnoreCase))
+                        if (Model.Contains("NVMe", StringComparison.OrdinalIgnoreCase))
                             tipo = "NVMe";
-                        else if (model.Contains("SSD", StringComparison.OrdinalIgnoreCase))
+                        else if (Model.Contains("SSD", StringComparison.OrdinalIgnoreCase))
                             tipo = "SSD";
 
                         disks.Add(new Disk
                         {
-                            Modelo = model.Trim(),
-                            Fabricante = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
+                            Model = Model.Trim(),
+                            Manufacturer = obj["Manufacturer"]?.ToString()?.Trim() ?? "N/A",
                             Interface = obj["InterfaceType"]?.ToString()?.Trim() ?? "N/A",
-                            TamanhoGB = Math.Round(ConvertToDouble(obj["Size"]) / 1073741824, 2),
-                            Serial = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A",
-                            Tipo = tipo
+                            SizeGB = Math.Round(ConvertToDouble(obj["Size"]) / 1073741824, 2),
+                            SerialNumber = obj["SerialNumber"]?.ToString()?.Trim() ?? "N/A",
+                            Type = tipo
                         });
                     }
                 }
-                info.Discos = disks;
+                info.Disk = disks;
 
                 // Video
-                var videos = new List<VideoController>();
-                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
+                var videos = new List<GPU>();
+                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_GPU"))
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         var ram = ConvertToDouble(obj["AdapterRAM"]);
-                        videos.Add(new VideoController
+                        videos.Add(new GPU
                         {
-                            Modelo = obj["Name"]?.ToString()?.Trim() ?? "N/A",
-                            MemoriaGB = ram > 0 ? Math.Round(ram / 1073741824, 2) : 0
+                            Model = obj["Name"]?.ToString()?.Trim() ?? "N/A",
+                            MemoryGB = ram > 0 ? Math.Round(ram / 1073741824, 2) : 0
                         });
                     }
                 }
-                info.Video = videos;
+                info.GPU = videos;
 
                 // Network
-                var nics = new List<NetworkAdapter>();
-                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_NetworkAdapter WHERE PhysicalAdapter = True"))
+                var nics = new List<Network>();
+                using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Network WHERE PhysicalAdapter = True"))
                 {
                     foreach (ManagementObject obj in searcher.Get())
                     {
                         var speed = ConvertToInt64(obj["Speed"]);
-                        nics.Add(new NetworkAdapter
+                        nics.Add(new Network
                         {
-                            Modelo = obj["Name"]?.ToString()?.Trim() ?? "N/A",
+                            Model = obj["Name"]?.ToString()?.Trim() ?? "N/A",
                             MAC = obj["MACAddress"]?.ToString()?.Trim() ?? "N/A",
-                            VelocidadeMbps = speed > 0 ? speed / 1000000 : 0
+                            SpeedMbps = speed > 0 ? speed / 1000000 : 0
                         });
                     }
                 }
-                info.Rede = nics;
+                info.Network = nics;
 
-                info.DataInventario = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                info.Date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
                 return info;
             }

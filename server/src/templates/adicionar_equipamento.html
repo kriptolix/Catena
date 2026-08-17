@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Adicionar Equipamento</h2>
-<form id="add-equipamento-form">
+<h2>Adicionar Equipment</h2>
+<form id="add-Equipment-form">
     <div>
         <label>Tombo (opcional):</label>
         <input type="text" id="tombo" placeholder="Deixe em branco para gerar automático">
@@ -12,24 +12,24 @@
         <input type="text" id="uuid">
     </div>
     <div>
-        <label>Fabricante:</label>
-        <input type="text" id="fabricante">
+        <label>manufacturer:</label>
+        <input type="text" id="manufacturer">
     </div>
     <div>
-        <label>Modelo:</label>
-        <input type="text" id="modelo">
+        <label>model:</label>
+        <input type="text" id="model">
     </div>
     <div>
         <label>Número de Série:</label>
-        <input type="text" id="numero_serie">
+        <input type="text" id="serial_number">
     </div>
     <div>
         <label>Localização (obrigatório):</label>
-        <input type="text" id="localizacao" required>
+        <input type="text" id="location" required>
     </div>
     <div>
-        <label>Estado:</label>
-        <select id="estado">
+        <label>status:</label>
+        <select id="status">
             <option value="funcional">Funcional</option>
             <option value="defeituoso">Defeituoso</option>
             <option value="devolvido">Devolvido</option>
@@ -37,11 +37,11 @@
     </div>
     <div>
         <label>Início da Garantia:</label>
-        <input type="date" id="inicio_garantia">
+        <input type="date" id="warranty_start">
     </div>
     <div>
         <label>Duração (meses):</label>
-        <input type="number" id="duracao_garantia" min="0">
+        <input type="number" id="warranty_period" min="0">
     </div>
     <button type="submit">Cadastrar</button>
 </form>
@@ -50,7 +50,7 @@
 
 {% block scripts %}
 <script>
-    document.getElementById('add-equipamento-form').addEventListener('submit', async (e) => {
+    document.getElementById('add-Equipment-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const token = localStorage.getItem('access_token');
         if (!token) {
@@ -59,19 +59,19 @@
         }
 
         const dados = {
-            tombo: document.getElementById('tombo').value || undefined,
+            asset_number document.getElementById('tombo').value || undefined,
             uuid: document.getElementById('uuid').value || undefined,
-            fabricante: document.getElementById('fabricante').value || undefined,
-            modelo: document.getElementById('modelo').value || undefined,
-            numero_serie: document.getElementById('numero_serie').value || undefined,
-            localizacao: document.getElementById('localizacao').value,
-            estado: document.getElementById('estado').value,
-            inicio_garantia: document.getElementById('inicio_garantia').value || undefined,
-            duracao_garantia: document.getElementById('duracao_garantia').value ? parseInt(document.getElementById('duracao_garantia').value) : undefined
+            manufacturer: document.getElementById('manufacturer').value || undefined,
+            model: document.getElementById('model').value || undefined,
+            serial_number: document.getElementById('serial_number').value || undefined,
+            location: document.getElementById('location').value,
+            status: document.getElementById('status').value,
+            warranty_start: document.getElementById('warranty_start').value || undefined,
+            warranty_period: document.getElementById('warranty_period').value ? parseInt(document.getElementById('warranty_period').value) : undefined
         };
 
         try {
-            const response = await fetch('/api/v1/equipamentos', {
+            const response = await fetch('/api/v1/Equipments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -81,7 +81,7 @@
             });
             if (response.ok) {
                 const equip = await response.json();
-                document.getElementById('add-message').innerHTML = `<span style="color:green;">Equipamento ${equip.tombo} cadastrado com sucesso! <a href="/equipamentos/${equip.tombo}">Ver detalhes</a></span>`;
+                document.getElementById('add-message').innerHTML = `<span style="color:green;">Equipment ${equip.tombo} cadastrado com sucesso! <a href="/Equipments/${equip.tombo}">Ver detalhes</a></span>`;
                 // Limpar formulário opcional
             } else {
                 const err = await response.json();

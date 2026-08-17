@@ -17,28 +17,28 @@
         </div>
 
         <div id='statusMessage' class='status info'>
-            Aguardando análise do equipamento
+            Aguardando análise do Equipment
         </div>
 
         <div class='card'>
-            <h2>🔍 Análise do Equipamento</h2>
+            <h2>🔍 Análise do Equipment</h2>
             <button id='btnAnalyze' class='btn' onclick='analyze()'>
-                Analisar equipamento
+                Analisar Equipment
             </button>
             <div id='loadingAnalyze' class='loading hidden' style='margin-left: 15px;'></div>
         </div>
 
         <div class='card' id='hardwareInfo' style='display:none;'>
-            <h2>💻 Informações do Equipamento</h2>
+            <h2>💻 Informações do Equipment</h2>
             <div class='hardware-grid'>
-                <div class='hardware-item'><label>Fabricante:</label> <span id='fabricante'>-</span></div>
-                <div class='hardware-item'><label>Modelo:</label> <span id='modelo'>-</span></div>
+                <div class='hardware-item'><label>Manufacturer:</label> <span id='manufacturer'>-</span></div>
+                <div class='hardware-item'><label>Model:</label> <span id='model'>-</span></div>
                 <div class='hardware-item'><label>Serial:</label> <span id='serial'>-</span></div>
                 <div class='hardware-item'><label>CPU:</label> <span id='cpu'>-</span></div>
-                <div class='hardware-item'><label>Memória:</label> <span id='memoria'>-</span></div>
-                <div class='hardware-item'><label>Armazenamento:</label> <span id='armazenamento'>-</span></div>
-                <div class='hardware-item'><label>Sistema:</label> <span id='sistema'>-</span></div>
-                <div class='hardware-item'><label>Arquitetura:</label> <span id='arquitetura'>-</span></div>
+                <div class='hardware-item'><label>Memory:</label> <span id='memory'>-</span></div>
+                <div class='hardware-item'><label>Storage:</label> <span id='storage'>-</span></div>
+                <div class='hardware-item'><label>System:</label> <span id='system'>-</span></div>
+                <div class='hardware-item'><label>Architecture:</label> <span id='architecture'>-</span></div>
             </div>
         </div>
 
@@ -63,17 +63,17 @@
 
             <div class='grid' style='margin-top: 20px;'>
                 <div class='field'>
-                    <label>Tombo (opcional):</label>
-                    <input id='tombo' placeholder='Deixe em branco para gerar automático'>
+                    <label>Asset Tag (opcional):</label>
+                    <input id='assetTag' placeholder='Deixe em branco para gerar automático'>
                 </div>
                 <div class='field'>
-                    <label>Localização *:</label>
-                    <input id='localizacao' placeholder='Localização do equipamento' required>
+                    <label>Location *:</label>
+                    <input id='location' placeholder='Localização do Equipment' required>
                 </div>
             </div>
             <div class='field'>
-                <label>Observação:</label>
-                <textarea id='observacao' placeholder='Observações adicionais...'></textarea>
+                <label>Annotation:</label>
+                <textarea id='annotation' placeholder='Observações adicionais...'></textarea>
             </div>
 
             <div class='btn-group'>
